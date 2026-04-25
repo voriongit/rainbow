@@ -1,0 +1,83 @@
+{
+  "name": "@vorionsys/rainbow",
+  "version": "0.1.0",
+  "description": "RAINBOW - Recorded Analytics Involving Non-Binary Orchestration Window",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./collector": {
+      "types": "./dist/collector/index.d.ts",
+      "import": "./dist/collector/index.js"
+    },
+    "./window": {
+      "types": "./dist/window/index.d.ts",
+      "import": "./dist/window/index.js"
+    },
+    "./state": {
+      "types": "./dist/state/index.d.ts",
+      "import": "./dist/state/index.js"
+    },
+    "./orchestration": {
+      "types": "./dist/orchestration/index.d.ts",
+      "import": "./dist/orchestration/index.js"
+    },
+    "./insight": {
+      "types": "./dist/insight/index.d.ts",
+      "import": "./dist/insight/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@vorionsys/basis": "^2.0.0",
+    "@vorionsys/contracts": "^1.0.0",
+    "uuid": "^11.0.4",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.5",
+    "@types/uuid": "^10.0.0",
+    "typescript": "^5.7.2",
+    "vitest": "^4.0.18"
+  },
+  "author": "Vorion LLC <team@vorion.org>",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/voriongit/rainbow.git"
+  },
+  "bugs": {
+    "url": "https://github.com/voriongit/rainbow/issues"
+  },
+  "homepage": "https://vorion.org",
+  "keywords": [
+    "ai",
+    "governance",
+    "trust",
+    "analytics",
+    "rainbow",
+    "vorion",
+    "nist",
+    "compliance",
+    "observability"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
