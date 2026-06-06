@@ -89,32 +89,31 @@ export function detectAnomalyClusters(
   const visited = new Set<string>();
   let clusterIdx = 0;
 
-  const agentIds = [...agentFailingFactors.keys()];
+  const agentEntries = [...agentFailingFactors.entries()];
 
-  for (let i = 0; i < agentIds.length; i++) {
-    const agentA = agentIds[i]!;
+  for (let i = 0; i < agentEntries.length; i++) {
+    const [agentA, factorsA] = agentEntries[i];
     if (visited.has(agentA)) continue;
 
     const clusterAgents = [agentA];
-    const factorsA = agentFailingFactors.get(agentA)!;
+    const clusterFactorSets = [factorsA];
 
-    for (let j = i + 1; j < agentIds.length; j++) {
-      const agentB = agentIds[j]!;
+    for (let j = i + 1; j < agentEntries.length; j++) {
+      const [agentB, factorsB] = agentEntries[j];
       if (visited.has(agentB)) continue;
 
-      const factorsB = agentFailingFactors.get(agentB)!;
       // Find intersection
       const shared = [...factorsA].filter((f) => factorsB.has(f));
       if (shared.length > 0) {
         clusterAgents.push(agentB);
+        clusterFactorSets.push(factorsB);
       }
     }
 
     if (clusterAgents.length >= MIN_CLUSTER_SIZE) {
       // Find common factors across ALL agents in cluster
-      const allFactorSets = clusterAgents.map((id) => agentFailingFactors.get(id)!);
-      const commonFactors = [...allFactorSets[0]!].filter((f) =>
-        allFactorSets.every((s) => s.has(f))
+      const commonFactors = [...clusterFactorSets[0]].filter((f) =>
+        clusterFactorSets.every((s) => s.has(f))
       );
 
       if (commonFactors.length > 0) {
@@ -125,12 +124,12 @@ export function detectAnomalyClusters(
           clusterAgents.length >= 3 ? 'critical' : 'warning';
 
         clusters.push({
-          clusterId: `cluster-${++clusterIdx}`,
+          clusterId: `cluster-${String(++clusterIdx)}`,
           agentIds: clusterAgents,
           commonFactors,
           detectedAt: now,
           severity,
-          description: `${clusterAgents.length} agents sharing failures in ${commonFactors.join(', ')}`,
+          description: `${String(clusterAgents.length)} agents sharing failures in ${commonFactors.join(', ')}`,
         });
       }
     }

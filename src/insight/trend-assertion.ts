@@ -37,7 +37,7 @@ export function detectInsights(
       title: agentId
         ? `Agent ${agentId} trust declining at ${Math.abs(result.trajectory.velocity).toFixed(1)} pts/hr`
         : `Fleet trust declining at ${Math.abs(result.trajectory.velocity).toFixed(1)} pts/hr`,
-      description: `Trust score has fallen from ${result.trajectory.max} to ${result.trajectory.current} within the ${config.duration} window. Velocity: ${result.trajectory.velocity.toFixed(2)} pts/hr.`,
+      description: `Trust score has fallen from ${String(result.trajectory.max)} to ${String(result.trajectory.current)} within the ${config.duration} window. Velocity: ${result.trajectory.velocity.toFixed(2)} pts/hr.`,
       windowConfig: config,
       detectedAt: now,
     }));
@@ -52,8 +52,8 @@ export function detectInsights(
       category: 'CB_PATTERN',
       severity,
       agentIds: agentId ? [agentId] : [],
-      title: `${result.transitions.cbTrips} circuit breaker trip(s) in ${config.duration}`,
-      description: `Circuit breaker tripped ${result.transitions.cbTrips} time(s) with ${result.transitions.cbResets} reset(s). Degraded entries: ${result.transitions.cbDegradedEntries}.`,
+      title: `${String(result.transitions.cbTrips)} circuit breaker trip(s) in ${config.duration}`,
+      description: `Circuit breaker tripped ${String(result.transitions.cbTrips)} time(s) with ${String(result.transitions.cbResets)} reset(s). Degraded entries: ${String(result.transitions.cbDegradedEntries)}.`,
       windowConfig: config,
       detectedAt: now,
     }));
@@ -71,7 +71,7 @@ export function detectInsights(
       severity,
       agentIds: agentId ? [agentId] : [],
       title: `Risk accumulator escalating — peak ${result.riskTrend.peakInWindow.toFixed(0)}`,
-      description: `24h risk accumulator peaked at ${result.riskTrend.peakInWindow.toFixed(0)} (warning: ${RISK_ACCUMULATOR.warningThreshold}, degraded: ${RISK_ACCUMULATOR.degradedThreshold}, CB: ${RISK_ACCUMULATOR.cbThreshold}). Warning breaches: ${result.riskTrend.warningBreaches}, degraded breaches: ${result.riskTrend.degradedBreaches}.`,
+      description: `24h risk accumulator peaked at ${result.riskTrend.peakInWindow.toFixed(0)} (warning: ${String(RISK_ACCUMULATOR.warningThreshold)}, degraded: ${String(RISK_ACCUMULATOR.degradedThreshold)}, CB: ${String(RISK_ACCUMULATOR.cbThreshold)}). Warning breaches: ${String(result.riskTrend.warningBreaches)}, degraded breaches: ${String(result.riskTrend.degradedBreaches)}.`,
       windowConfig: config,
       detectedAt: now,
     }));
@@ -79,7 +79,7 @@ export function detectInsights(
 
   // 4. Factor degradation (high failure rate)
   const failingFactors = Object.entries(result.distribution.byFactor)
-    .filter(([_, stats]) => {
+    .filter(([, stats]) => {
       const total = stats.success + stats.failure;
       return total >= 3 && stats.failure / total >= 0.5;
     })
@@ -90,8 +90,8 @@ export function detectInsights(
       category: 'FACTOR_DEGRADATION',
       severity: failingFactors.length >= 3 ? 'critical' : 'warning',
       agentIds: agentId ? [agentId] : [],
-      title: `${failingFactors.length} factor(s) degrading: ${failingFactors.join(', ')}`,
-      description: `Factors with >50% failure rate in the ${config.duration} window: ${failingFactors.join(', ')}. Total signals: ${result.distribution.total}.`,
+      title: `${String(failingFactors.length)} factor(s) degrading: ${failingFactors.join(', ')}`,
+      description: `Factors with >50% failure rate in the ${config.duration} window: ${failingFactors.join(', ')}. Total signals: ${String(result.distribution.total)}.`,
       windowConfig: config,
       detectedAt: now,
     }));
@@ -109,7 +109,7 @@ export function detectInsights(
       title: agentId
         ? `Agent ${agentId} is a promotion candidate`
         : 'Fleet shows promotion-ready agents',
-      description: `${result.distribution.total} signals with 100% success rate and rising trajectory. Current score: ${result.trajectory.current}.`,
+      description: `${String(result.distribution.total)} signals with 100% success rate and rising trajectory. Current score: ${String(result.trajectory.current)}.`,
       windowConfig: config,
       detectedAt: now,
     }));

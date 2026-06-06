@@ -40,7 +40,8 @@ export function computeObservationImpact(
   observationTier: string,
   currentScore: number
 ): ObservationImpactAnalysis {
-  const tierEntry = OBSERVATION_TIERS[observationTier as keyof typeof OBSERVATION_TIERS];
+  const tiers: Record<string, { ceiling: number } | undefined> = OBSERVATION_TIERS;
+  const tierEntry = tiers[observationTier];
   const ceiling = tierEntry?.ceiling ?? 600;
 
   const ceilingConstraintActive = currentScore >= ceiling * 0.95; // Within 5% of ceiling

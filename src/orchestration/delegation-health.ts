@@ -68,9 +68,11 @@ export function computeDelegationHealth(
   const rejectedEscalations = events.length - successfulEscalations;
 
   // Average resolution time
-  const withTime = events.filter((e) => e.resolutionTimeMs !== undefined);
+  const withTime = events.filter(
+    (e): e is typeof e & { resolutionTimeMs: number } => e.resolutionTimeMs !== undefined
+  );
   const averageResolutionTimeMs = withTime.length > 0
-    ? withTime.reduce((s, e) => s + e.resolutionTimeMs!, 0) / withTime.length
+    ? withTime.reduce((s, e) => s + e.resolutionTimeMs, 0) / withTime.length
     : 0;
 
   // Pair counts
@@ -86,7 +88,7 @@ export function computeDelegationHealth(
   const topEscalationPairs = [...pairCounts.entries()]
     .map(([key, count]) => {
       const [requestor, handler] = key.split('→');
-      return { requestor: requestor!, handler: handler!, count };
+      return { requestor: requestor, handler: handler, count };
     })
     .sort((a, b) => b.count - a.count)
     .slice(0, 10);

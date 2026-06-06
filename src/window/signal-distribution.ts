@@ -48,13 +48,14 @@ export function computeDistribution(signals: IngestedSignal[]): SignalDistributi
 
     // Factor
     if (signal.factorCode) {
-      if (!byFactor[signal.factorCode]) {
+      if (!Object.hasOwn(byFactor, signal.factorCode)) {
         byFactor[signal.factorCode] = { success: 0, failure: 0 };
       }
+      const factorStats = byFactor[signal.factorCode];
       if (signal.success) {
-        byFactor[signal.factorCode]!.success++;
+        factorStats.success++;
       } else {
-        byFactor[signal.factorCode]!.failure++;
+        factorStats.failure++;
       }
     }
   }

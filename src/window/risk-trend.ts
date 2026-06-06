@@ -37,7 +37,8 @@ export function computeRiskTrend(signals: IngestedSignal[]): RiskTrend {
 
   for (const signal of signals) {
     if (!signal.success && !signal.blocked && signal.riskLevel) {
-      const riskEntry = RISK_LEVELS[signal.riskLevel as keyof typeof RISK_LEVELS];
+      const riskLevels: Record<string, { multiplier: number } | undefined> = RISK_LEVELS;
+      const riskEntry = riskLevels[signal.riskLevel];
       if (riskEntry) {
         // Simplified: use risk multiplier as contribution
         // Full formula would be P(T) × R, but we don't have tier in signal
@@ -88,7 +89,7 @@ export function computeRiskTrend(signals: IngestedSignal[]): RiskTrend {
   }
 
   const currentAccumulatorValue =
-    samples.length > 0 ? samples[samples.length - 1]!.value : 0;
+    samples.length > 0 ? samples[samples.length - 1].value : 0;
 
   // Determine trend from first/last quarter values
   const trend = determineTrend(samples);

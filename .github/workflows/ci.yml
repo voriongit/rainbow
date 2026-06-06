@@ -7,16 +7,21 @@ on:
     branches: [main]
 
 jobs:
-  build:
+  ci:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
         with:
           node-version: '22'
-          cache: 'npm'
-      - run: npm install --legacy-peer-deps
+          cache: npm
+      - name: Install
+        run: npm ci
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Lint
+        run: npm run lint
       - name: Build
         run: npm run build
-      - name: Test
-        run: npm test
+      - name: Test (coverage-gated)
+        run: npm run test:coverage
