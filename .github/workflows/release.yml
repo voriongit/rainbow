@@ -1,0 +1,33 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: npm
+          registry-url: 'https://registry.npmjs.org'
+      - name: Update npm (trusted publishing requires npm >= 11.5.1)
+        run: npm install -g npm@latest
+      - name: Install
+        run: npm ci
+      - name: Gates
+        run: |
+          npm run typecheck
+          npm run lint
+          npm run build
+          npm run test:coverage
+      - name: Publish (tokenless OIDC, provenance)
+        run: npm publish --provenance --access public
