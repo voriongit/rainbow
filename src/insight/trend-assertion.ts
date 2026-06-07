@@ -2,7 +2,9 @@
  * @fileoverview Trend assertion detection.
  *
  * Scans analytics window results for actionable patterns and generates
- * RecordedInsights with evidence references.
+ * rule-based RecordedInsights. The `evidenceChain` field is reserved for a
+ * future proof-plane integration and is always empty today — insights are
+ * derived from window analytics rules, not from proof events.
  *
  * @module @vorionsys/rainbow/insight
  */
@@ -130,7 +132,9 @@ function makeInsight(params: {
 }): RecordedInsight {
   return {
     insightId: uuidv4(),
-    evidenceChain: [], // Populated by proof plane integration
+    // Reserved for future proof-plane integration; always empty today.
+    // Insights are rule-based — see module fileoverview.
+    evidenceChain: [],
     ...params,
   };
 }

@@ -1,6 +1,6 @@
 {
   "name": "@vorionsys/rainbow",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "RAINBOW - Recorded Analytics Involving Non-Binary Orchestration Window",
   "type": "module",
   "main": "./dist/index.js",
@@ -46,9 +46,8 @@
   },
   "dependencies": {
     "@vorionsys/basis": "^2.0.0",
-    "@vorionsys/contracts": "^1.0.0",
-    "uuid": "^11.0.4",
-    "zod": "^3.24.1"
+    "@vorionsys/contracts": "^1.1.0",
+    "uuid": "^11.0.4"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
@@ -64,12 +63,12 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/voriongit/rainbow.git"
+    "url": "git+https://github.com/vorionsys/rainbow.git"
   },
   "bugs": {
-    "url": "https://github.com/voriongit/rainbow/issues"
+    "url": "https://github.com/vorionsys/rainbow/issues"
   },
-  "homepage": "https://vorion.org",
+  "homepage": "https://github.com/vorionsys/rainbow#readme",
   "keywords": [
     "ai",
     "governance",

@@ -39,6 +39,7 @@ function makeResult(overrides: Partial<AnalyticsWindowResult> = {}): AnalyticsWi
       degradedBreaches: 0,
       trend: 'stable',
       samples: [],
+      excludedFromAccumulator: 0,
     },
     ...overrides,
   };
@@ -69,6 +70,9 @@ describe('detectInsights', () => {
     expect(trend).toBeDefined();
     expect(trend!.severity).toBe('warning');
     expect(trend!.agentIds).toContain('agent-1');
+    // Insights are rule-based: evidenceChain is reserved for proof-plane
+    // integration and stays empty in this version.
+    expect(trend!.evidenceChain).toEqual([]);
   });
 
   it('escalates to critical for fast decline', () => {
@@ -116,6 +120,7 @@ describe('detectInsights', () => {
         degradedBreaches: 1,
         trend: 'escalating',
         samples: [],
+        excludedFromAccumulator: 0,
       },
     });
 
@@ -200,6 +205,7 @@ describe('detectInsights', () => {
         degradedBreaches: 2,
         trend: 'escalating',
         samples: [],
+        excludedFromAccumulator: 0,
       },
     });
 

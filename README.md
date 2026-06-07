@@ -9,23 +9,26 @@ aggregations (1h / 6h / 24h / 7d / 30d) over trust signals and produces:
 - **Trajectory** — trend, velocity, acceleration
 - **Signal distribution** — by type and severity
 - **State transitions** — between observation/trust tiers
-- **Risk accumulator trends** — windowed P/T pressure
+- **Risk accumulator trends** — windowed reconstruction of the canonical
+  P(T) × R risk pressure, in the same units as the BASIS accumulator
+  thresholds
 - **Per-factor health** — across the 16 canonical trust factors
 - **Fleet-wide orchestration** — distribution, delegation health, anomaly clustering
-- **Proof-backed insights** — trend detection, CB patterns, accumulator escalation, factor degradation, promotion candidates
+- **Rule-based insights** — trend detection, CB patterns, accumulator
+  escalation, factor degradation, promotion candidates
 
 Part of the **Vorion** AI governance ecosystem. RAINBOW consumes
 [`@vorionsys/contracts`](https://www.npmjs.com/package/@vorionsys/contracts) bus signal types and
-the canonical trust constants from [`@vorionsys/basis`](https://www.npmjs.com/package/@vorionsys/basis).
+the canonical trust constants from `@vorionsys/basis`.
 
 ## Status
 
 Phases 1–4 shipped:
 
 - **Phase 1** — collector (ring buffers), windowed aggregation engine
-- **Phase 2** — non-binary state views (16-factor health, observation impact, state snapshots), RAINBOW Zod contracts, `BusSignalType.TREND_DETECTED` + `FLEET_ANOMALY`
+- **Phase 2** — non-binary state views (16-factor health, observation impact, state snapshots), `BusSignalType.TREND_DETECTED` + `FLEET_ANOMALY`
 - **Phase 3** — fleet-wide orchestration analytics (fleet distribution, delegation health, correlation summary, anomaly clustering)
-- **Phase 4** — proof-backed insights, `Rainbow` facade class, `RAINBOW_INSIGHT` proof event type
+- **Phase 4** — rule-based insights and the `Rainbow` facade class
 
 Phase 5 (dashboard page + API routes) lives in the consuming app, not in this package.
 
@@ -61,10 +64,35 @@ import { FleetDistribution } from '@vorionsys/rainbow/orchestration';
 import { TrendAssertion } from '@vorionsys/rainbow/insight';
 ```
 
+## Scope and limitations
+
+Honest boundaries of what this package does — read before relying on the
+numbers:
+
+- **Insights are rule-based, not proof-backed.** `detectInsights` applies
+  fixed thresholds to window analytics. The `RecordedInsight.evidenceChain`
+  field is reserved for a future proof-plane integration and is **always
+  empty** in this version; no insight is backed by proof events.
+- **The risk accumulator is a reconstruction, and it under-counts.** Each
+  replayed failure contributes the canonical `P(tierAfter) × R(riskLevel)`
+  increment, but failure signals missing `tierAfter` (or carrying an
+  unrecognized `riskLevel`) are **excluded rather than estimated** — the
+  `RiskTrend.excludedFromAccumulator` count reports how many. When signal
+  sources omit tier data, accumulator values and breach counts are lower
+  bounds, not authoritative replays of the enforcement-side accumulator.
+- **Analytics are only as good as the ingested signals.** RAINBOW is a
+  white-box view over whatever `IngestedSignal`s you feed it. It does not
+  verify signal authenticity, ordering, or completeness; results computed
+  from synthetic or partial signal streams describe those streams, not
+  production behavior.
+- **Trust scores are estimates inside the window.** Trajectories replay
+  per-signal deltas from a resolved initial score; they can drift from the
+  enforcement-side score when signals are missing from the window store.
+
 ## Develop
 
 ```bash
-npm install --legacy-peer-deps
+npm install
 npm run build       # tsc
 npm test            # vitest run
 npm run typecheck   # tsc --noEmit
@@ -75,25 +103,7 @@ npm run test:coverage
 
 - TypeScript 5.7+ (ES2022, ESM only, `moduleResolution: bundler`)
 - Vitest 4 for tests
-- Zod 3 for runtime contract types
 - Node 18+ runtime, Node 22 for CI
-
-## Provenance
-
-This package was extracted as its own polyrepo on **2026-04-24** by
-direction of the founder, after its source was found only on a divergent
-local clone of the Vorion monorepo and was missing from both remote
-mainlines. Per founder note: *"1 rainbow may have gotten stuck in
-branches that locked up main, it sb its own repo."*
-
-- **Source path:** `voriongit/vorion/packages/rainbow/`
-- **Source clone HEAD:** `3d7ed92d6dba5705bcdd3f951dbd8929eb2f9a3a` (branch `main` of local clone, divergent from voriongit/vorion remote main)
-- **Provenance commit (last touched the package on this branch):** `c5f28520ac42e2a45ce01778a4cdea8b1d7138c7` — *chore(npm): normalize author to Vorion LLC across 33 packages, prep vorion-llc transfer* (2026-04-17)
-- **Preservation:** Full local clone preserved at `c:/voriongit/_archive/vorion-local-preservation-2026-04-23.tar.gz` and remote safety branch `voriongit/vorion/tree/archive/local-clone-preservation-2026-04-23`.
-- **License normalization:** Original `UNLICENSED` flipped to `Apache-2.0` to match the rest of the publicly extracted Vorion ecosystem packages.
-- **Scope:** `@vorionsys/rainbow` retained from monorepo `package.json` to match existing npm publishing convention used by `@vorionsys/basis` and `@vorionsys/contracts`.
-
-See [MEMORY.md](https://github.com/voriongit/voriongit-ops) entry `rainbow-package.md` for product context.
 
 ## License
 

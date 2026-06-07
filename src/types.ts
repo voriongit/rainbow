@@ -104,6 +104,11 @@ export interface StateTransitionSummary {
 
 export type RiskEscalation = 'escalating' | 'de-escalating' | 'stable';
 
+/**
+ * Risk accumulator reconstruction in canonical units: each replayed failure
+ * contributes `P(tierAfter) × R(riskLevel)` (the BASIS loss-formula increment
+ * the RISK_ACCUMULATOR thresholds are calibrated against).
+ */
 export interface RiskTrend {
   /** Current accumulator value */
   currentAccumulatorValue: number;
@@ -117,6 +122,13 @@ export interface RiskTrend {
   trend: RiskEscalation;
   /** Sampled accumulator values */
   samples: Array<{ timestamp: Date; value: number }>;
+  /**
+   * Failure signals excluded from the reconstruction because `tierAfter`
+   * was absent/invalid or `riskLevel` was unrecognized. A non-zero value
+   * means the accumulator under-counts true risk pressure; tiers are never
+   * estimated to fill the gap.
+   */
+  excludedFromAccumulator: number;
 }
 
 // ============================================================================
