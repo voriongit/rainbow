@@ -7,7 +7,7 @@
  * @module @vorionsys/rainbow/window
  */
 
-import { TRUST_TIERS } from '@vorionsys/basis';
+import { TRUST_TIERS } from '@basis-spec/basis';
 import type { IngestedSignal } from '../collector/collector-types.js';
 import type { StateTransitionSummary } from '../types.js';
 

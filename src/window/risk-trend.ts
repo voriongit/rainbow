@@ -24,7 +24,7 @@ import {
   PENALTY_RATIO_MIN,
   RISK_ACCUMULATOR,
   RISK_LEVELS,
-} from '@vorionsys/basis';
+} from '@basis-spec/basis';
 import type { IngestedSignal } from '../collector/collector-types.js';
 import type { RiskTrend, RiskEscalation } from '../types.js';
 
