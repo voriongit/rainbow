@@ -68,7 +68,7 @@ export function computeWindow(
  */
 function estimateInitialScore(signals: Array<{ delta: number; scoreAfter?: number }>): number {
   if (signals.length === 0) return 0;
-  const first = signals[0]!;
+  const first = signals[0];
   if (first.scoreAfter !== undefined) {
     return Math.max(0, Math.min(1000, first.scoreAfter - first.delta));
   }

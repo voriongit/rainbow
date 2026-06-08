@@ -39,7 +39,7 @@ const TIER_ENTRIES = Object.entries(TRUST_TIERS)
 
 function getTierKey(score: number): string {
   for (let i = TIER_ENTRIES.length - 1; i >= 0; i--) {
-    if (score >= TIER_ENTRIES[i]!.min) return TIER_ENTRIES[i]!.key;
+    if (score >= TIER_ENTRIES[i].min) return TIER_ENTRIES[i].key;
   }
   return 'T0';
 }
@@ -81,7 +81,7 @@ export function computeFleetDistribution(
   const histogram = buildEmptyHistogram();
   for (const score of scores) {
     const bucketIdx = Math.min(Math.floor(score / 50), histogram.length - 1);
-    histogram[bucketIdx]!.count++;
+    histogram[bucketIdx].count++;
   }
 
   // Statistics
@@ -90,8 +90,8 @@ export function computeFleetDistribution(
 
   const sorted = [...scores].sort((a, b) => a - b);
   const medianScore = totalAgents % 2 === 0
-    ? (sorted[totalAgents / 2 - 1]! + sorted[totalAgents / 2]!) / 2
-    : sorted[Math.floor(totalAgents / 2)]!;
+    ? (sorted[totalAgents / 2 - 1] + sorted[totalAgents / 2]) / 2
+    : sorted[Math.floor(totalAgents / 2)];
 
   const variance = scores.reduce((s, v) => s + (v - averageScore) ** 2, 0) / totalAgents;
   const standardDeviation = Math.sqrt(variance);

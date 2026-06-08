@@ -56,7 +56,7 @@ export class RingBuffer {
 
     for (let i = 0; i < this._size; i++) {
       const idx = (this.head + i) % this.capacity;
-      const signal = this.buffer[idx]!;
+      const signal = this.buffer[idx];
       const ts = signal.timestamp.getTime();
       if (ts >= fromMs && ts <= toMs) {
         results.push(signal);
@@ -71,7 +71,7 @@ export class RingBuffer {
     const results: IngestedSignal[] = [];
     for (let i = 0; i < this._size; i++) {
       const idx = (this.head + i) % this.capacity;
-      results.push(this.buffer[idx]!);
+      results.push(this.buffer[idx]);
     }
     return results;
   }

@@ -56,14 +56,14 @@ const TIER_ENTRIES = Object.entries(TRUST_TIERS)
 
 function getTierKey(score: number): string {
   for (let i = TIER_ENTRIES.length - 1; i >= 0; i--) {
-    if (score >= TIER_ENTRIES[i]!.min) return TIER_ENTRIES[i]!.key;
+    if (score >= TIER_ENTRIES[i].min) return TIER_ENTRIES[i].key;
   }
   return 'T0';
 }
 
 function getTierIndex(score: number): number {
   for (let i = TIER_ENTRIES.length - 1; i >= 0; i--) {
-    if (score >= TIER_ENTRIES[i]!.min) return i;
+    if (score >= TIER_ENTRIES[i].min) return i;
   }
   return 0;
 }

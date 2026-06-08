@@ -19,7 +19,7 @@ const TIER_BOUNDARIES = Object.entries(TRUST_TIERS)
 /** Get tier index (0-7) from a trust score */
 function getTierIndex(score: number): number {
   for (let i = TIER_BOUNDARIES.length - 1; i >= 0; i--) {
-    if (score >= TIER_BOUNDARIES[i]!.min) return i;
+    if (score >= TIER_BOUNDARIES[i].min) return i;
   }
   return 0;
 }

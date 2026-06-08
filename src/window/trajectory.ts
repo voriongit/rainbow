@@ -77,7 +77,7 @@ function computeVelocity(
 ): number {
   if (samples.length < 2) return 0;
 
-  const t0 = samples[0]!.timestamp.getTime();
+  const t0 = samples[0].timestamp.getTime();
   const n = samples.length;
 
   let sumX = 0;
@@ -118,12 +118,12 @@ function computeAcceleration(
 
   // Time span of each half in hours
   const t1Span =
-    (firstHalf[firstHalf.length - 1]!.timestamp.getTime() -
-      firstHalf[0]!.timestamp.getTime()) /
+    (firstHalf[firstHalf.length - 1].timestamp.getTime() -
+      firstHalf[0].timestamp.getTime()) /
     3_600_000;
   const t2Span =
-    (secondHalf[secondHalf.length - 1]!.timestamp.getTime() -
-      secondHalf[0]!.timestamp.getTime()) /
+    (secondHalf[secondHalf.length - 1].timestamp.getTime() -
+      secondHalf[0].timestamp.getTime()) /
     3_600_000;
 
   const avgSpan = (t1Span + t2Span) / 2;

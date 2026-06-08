@@ -87,7 +87,7 @@ export function computeFactorHealth(
 
     // Last evidence
     const lastEvidenceAt = factorSignals.length > 0
-      ? factorSignals[factorSignals.length - 1]!.timestamp
+      ? factorSignals[factorSignals.length - 1].timestamp
       : undefined;
 
     // Required from tier
