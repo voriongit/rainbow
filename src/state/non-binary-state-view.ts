@@ -8,8 +8,8 @@
  * @module @vorionsys/rainbow/state
  */
 
-import { TRUST_TIERS } from '@vorionsys/basis';
 import type { IngestedSignal } from '../collector/collector-types.js';
+import { getTierIndex, getTierKey } from '../tiers.js';
 import type { FactorHealth } from './factor-health.js';
 import { computeFactorHealth } from './factor-health.js';
 import type { ObservationImpactAnalysis } from './observation-impact.js';
@@ -44,28 +44,6 @@ export interface StateSnapshotContext {
   observationTier: string;
   /** Agent's lifecycle state (e.g. 'ACTIVE') */
   lifecycleState: string;
-}
-
-// ============================================================================
-// Tier lookup
-// ============================================================================
-
-const TIER_ENTRIES = Object.entries(TRUST_TIERS)
-  .map(([key, val]) => ({ key, min: val.min, max: val.max }))
-  .sort((a, b) => a.min - b.min);
-
-function getTierKey(score: number): string {
-  for (let i = TIER_ENTRIES.length - 1; i >= 0; i--) {
-    if (score >= TIER_ENTRIES[i].min) return TIER_ENTRIES[i].key;
-  }
-  return 'T0';
-}
-
-function getTierIndex(score: number): number {
-  for (let i = TIER_ENTRIES.length - 1; i >= 0; i--) {
-    if (score >= TIER_ENTRIES[i].min) return i;
-  }
-  return 0;
 }
 
 // ============================================================================

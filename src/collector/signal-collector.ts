@@ -9,6 +9,7 @@
  */
 
 import { v4 as uuidv4 } from 'uuid';
+import { BusSignalType, BusSeverity } from '../contracts-stubs.js';
 import type { IngestedSignal, CollectorConfig } from './collector-types.js';
 import { RingBuffer } from './buffer.js';
 
@@ -33,6 +34,13 @@ export interface PipelineBlockedEvent {
 }
 
 const DEFAULT_BUFFER_CAPACITY = 10_000;
+
+const BUS_SEVERITY_VALUES = new Set<string>(Object.values(BusSeverity));
+
+/** Map a free-form severity string to a BusSeverity when it matches one */
+function toBusSeverity(severity: string): BusSeverity | undefined {
+  return BUS_SEVERITY_VALUES.has(severity) ? (severity as BusSeverity) : undefined;
+}
 
 /**
  * Collects and normalizes trust signals from pipeline callbacks
@@ -109,6 +117,8 @@ export class SignalCollector {
         agentId,
         tenantId: this.defaultTenantId,
         timestamp: alert.detectedAt,
+        busSignalType: BusSignalType.FLEET_ANOMALY,
+        severity: toBusSeverity(alert.severity),
         success: false,
         delta: 0,
         blocked: false,
@@ -171,9 +181,9 @@ export class SignalCollector {
     this.buffers.clear();
   }
 
-  /** Clear signals for a specific agent */
+  /** Clear signals for a specific agent and forget the agent entirely */
   clearAgent(agentId: string): void {
-    this.buffers.get(agentId)?.clear();
+    this.buffers.delete(agentId);
   }
 
   private store(signal: IngestedSignal): void {

@@ -8,7 +8,8 @@
  */
 
 import type { WindowConfig, AnalyticsWindowResult } from '../types.js';
-import { WINDOW_DURATION_MS } from '../types.js';
+import { resolveWindowDurationMs } from '../types.js';
+import { clampScore } from '../tiers.js';
 import type { WindowStore } from './window-store.js';
 import { computeTrajectory } from './trajectory.js';
 import { computeDistribution } from './signal-distribution.js';
@@ -34,10 +35,7 @@ export function computeWindow(
   windowConfig: WindowConfig,
   now: Date = new Date()
 ): AnalyticsWindowResult {
-  const durationMs =
-    windowConfig.duration === 'custom'
-      ? (windowConfig.customMs ?? 3_600_000)
-      : WINDOW_DURATION_MS[windowConfig.duration];
+  const durationMs = resolveWindowDurationMs(windowConfig);
 
   const from = new Date(now.getTime() - durationMs);
   const agentId = windowConfig.agentId;
@@ -70,7 +68,7 @@ function estimateInitialScore(signals: Array<{ delta: number; scoreAfter?: numbe
   if (signals.length === 0) return 0;
   const first = signals[0];
   if (first.scoreAfter !== undefined) {
-    return Math.max(0, Math.min(1000, first.scoreAfter - first.delta));
+    return clampScore(first.scoreAfter - first.delta);
   }
   return 500; // Best guess when no score data available
 }

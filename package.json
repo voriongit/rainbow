@@ -34,6 +34,7 @@
   "files": [
     "dist"
   ],
+  "sideEffects": false,
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
@@ -42,13 +43,12 @@
     "test:coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "prepublishOnly": "npm run clean && npm run build"
   },
   "dependencies": {
     "@vorionsys/basis": "^2.0.0",
-    "@vorionsys/contracts": "^1.0.0",
-    "uuid": "^11.0.4",
-    "zod": "^3.24.1"
+    "uuid": "^11.0.4"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
