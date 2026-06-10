@@ -106,6 +106,8 @@ describe('computeDelegationHealth', () => {
     expect(result.potentialCollusionRisk).toBe(true);
     expect(result.topEscalationPairs[0]!.requestor).toBe('a1');
     expect(result.topEscalationPairs[0]!.handler).toBe('a2');
+    expect(result.collusionPairs).toHaveLength(1);
+    expect(result.collusionPairs[0]!).toMatchObject({ requestor: 'a1', handler: 'a2', count: 4, share: 1 });
   });
 
   it('no collusion when distributed', () => {
@@ -118,6 +120,7 @@ describe('computeDelegationHealth', () => {
 
     const result = computeDelegationHealth(events);
     expect(result.potentialCollusionRisk).toBe(false);
+    expect(result.collusionPairs).toHaveLength(0);
   });
 
   it('handles empty events', () => {

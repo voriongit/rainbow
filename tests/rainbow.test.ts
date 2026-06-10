@@ -246,6 +246,36 @@ describe('Rainbow convenience API', () => {
   });
 });
 
+describe('Rainbow fleet insights', () => {
+  it('detects fleet anomaly clusters end-to-end', () => {
+    const rainbow = new Rainbow();
+    const now = new Date('2026-01-01T12:00:00Z');
+
+    // Two agents failing the same factor within the window
+    for (const agentId of ['a1', 'a2']) {
+      for (let i = 0; i < 4; i++) {
+        rainbow.ingestMetrics({
+          agentId,
+          factorCode: 'CT-COMP',
+          success: false,
+          blocked: false,
+          delta: -5,
+          durationMs: 5,
+          timestamp: new Date(now.getTime() - (30 - i) * 60_000),
+        });
+      }
+    }
+
+    const insights = rainbow.fleetInsights('1h', now);
+    const anomaly = insights.find((i) => i.category === 'FLEET_ANOMALY');
+    expect(anomaly).toBeDefined();
+    expect(anomaly!.agentIds).toEqual(['a1', 'a2']);
+    expect(rainbow.latestInsights.map((i) => i.insightId)).toContain(anomaly!.insightId);
+
+    rainbow.dispose();
+  });
+});
+
 describe('Rainbow auto-compute lifecycle', () => {
   afterEach(() => {
     vi.useRealTimers();
@@ -326,6 +356,39 @@ describe('Rainbow auto-compute lifecycle', () => {
     expect(errors).toHaveLength(1);
     expect(errors[0]!.agentId).toBe('agent-1');
     expect((errors[0]!.error as Error).message).toBe('resolver down');
+
+    rainbow.dispose();
+  });
+
+  it('aggregates insights across agents and the fleet in one pass', () => {
+    vi.useFakeTimers();
+    const now = new Date('2026-01-01T12:00:00Z');
+    vi.setSystemTime(now);
+
+    const rainbow = new Rainbow({ computeIntervalMs: 1_000 });
+    // Two declining agents sharing a failing factor
+    for (const agentId of ['a1', 'a2']) {
+      for (let i = 0; i < 10; i++) {
+        rainbow.ingestMetrics({
+          agentId,
+          factorCode: 'CT-COMP',
+          success: false,
+          blocked: false,
+          delta: -15,
+          durationMs: 5,
+          timestamp: new Date(now.getTime() - (60 - i) * 60_000),
+        });
+      }
+    }
+
+    rainbow.start();
+    vi.advanceTimersByTime(1_000);
+
+    const latest = rainbow.latestInsights;
+    const agentsSeen = new Set(latest.flatMap((i) => i.agentIds));
+    expect(agentsSeen.has('a1')).toBe(true);
+    expect(agentsSeen.has('a2')).toBe(true);
+    expect(latest.some((i) => i.category === 'FLEET_ANOMALY')).toBe(true);
 
     rainbow.dispose();
   });
