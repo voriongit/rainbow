@@ -12,7 +12,7 @@ aggregations (1h / 6h / 24h / 7d / 30d) over trust signals and produces:
 - **Risk accumulator trends** — windowed P/T pressure
 - **Per-factor health** — across the 16 canonical trust factors
 - **Fleet-wide orchestration** — distribution, delegation health, anomaly clustering
-- **Proof-backed insights** — trend detection, CB patterns, accumulator escalation, factor degradation, promotion candidates
+- **Proof-backed insights** — trend detection, CB patterns, accumulator escalation, factor degradation, promotion candidates, dormancy warnings, fleet anomalies, delegation risk
 
 Part of the **Vorion** AI governance ecosystem. RAINBOW consumes
 [`@vorionsys/contracts`](https://www.npmjs.com/package/@vorionsys/contracts) bus signal types and

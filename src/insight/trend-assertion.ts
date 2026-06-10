@@ -7,10 +7,11 @@
  * @module @vorionsys/rainbow/insight
  */
 
-import { v4 as uuidv4 } from 'uuid';
 import { RISK_ACCUMULATOR } from '@vorionsys/basis';
-import type { AnalyticsWindowResult, WindowConfig } from '../types.js';
-import type { RecordedInsight, InsightSeverity, InsightCategory } from './insight-types.js';
+import { BusSignalType } from '../contracts-stubs.js';
+import type { AnalyticsWindowResult } from '../types.js';
+import type { RecordedInsight, InsightSeverity } from './insight-types.js';
+import { makeInsight } from './make-insight.js';
 
 /**
  * Detect insights from an analytics window result.
@@ -115,22 +116,19 @@ export function detectInsights(
     }));
   }
 
-  return insights;
-}
+  // 6. Dormancy warning (stepped deductions for inactivity)
+  const dormancyCount = result.distribution.byType[BusSignalType.DORMANCY_DEDUCTION] ?? 0;
+  if (dormancyCount > 0) {
+    insights.push(makeInsight({
+      category: 'DORMANCY_WARNING',
+      severity: dormancyCount >= 3 ? 'warning' : 'info',
+      agentIds: agentId ? [agentId] : [],
+      title: `${String(dormancyCount)} dormancy deduction(s) in ${config.duration}`,
+      description: `Dormancy milestones triggered ${String(dormancyCount)} stepped trust deduction(s) within the ${config.duration} window. The agent may be inactive or under-utilized.`,
+      windowConfig: config,
+      detectedAt: now,
+    }));
+  }
 
-function makeInsight(params: {
-  category: InsightCategory;
-  severity: InsightSeverity;
-  agentIds: string[];
-  title: string;
-  description: string;
-  windowConfig: WindowConfig;
-  detectedAt: Date;
-  metadata?: Record<string, unknown>;
-}): RecordedInsight {
-  return {
-    insightId: uuidv4(),
-    evidenceChain: [], // Populated by proof plane integration
-    ...params,
-  };
+  return insights;
 }

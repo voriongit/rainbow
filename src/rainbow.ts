@@ -24,6 +24,7 @@ import {
   type OrchestrationInput,
 } from './orchestration/orchestration-analytics.js';
 import { detectInsights } from './insight/trend-assertion.js';
+import { detectFleetInsights } from './insight/fleet-assertion.js';
 import type { RecordedInsight } from './insight/insight-types.js';
 
 // ============================================================================
@@ -162,6 +163,16 @@ export class Rainbow {
     return this.getOrchestrationSnapshot({}, toWindowConfig(config), now);
   }
 
+  /** Compute a fleet orchestration snapshot and detect fleet-level insights from it */
+  fleetInsights(
+    config: WindowDuration | WindowConfig = '24h',
+    now: Date = new Date()
+  ): RecordedInsight[] {
+    const windowConfig = toWindowConfig(config);
+    const snapshot = this.getOrchestrationSnapshot({}, windowConfig, now);
+    return this.recordInsights(detectFleetInsights(snapshot, windowConfig, now));
+  }
+
   /** Compute a windowed analytics result */
   computeAnalyticsWindow(
     windowConfig: WindowConfig,
@@ -202,15 +213,10 @@ export class Rainbow {
     result: AnalyticsWindowResult,
     now: Date = new Date()
   ): RecordedInsight[] {
-    const insights = detectInsights(result, now);
-    this._latestInsights = insights;
-    for (const insight of insights) {
-      this._onInsight?.(insight);
-    }
-    return insights;
+    return this.recordInsights(detectInsights(result, now));
   }
 
-  /** Get the most recently computed insights */
+  /** Get the insights from the most recent detection pass */
   get latestInsights(): RecordedInsight[] {
     return [...this._latestInsights];
   }
@@ -248,15 +254,37 @@ export class Rainbow {
     this._latestInsights = [];
   }
 
-  /** Compute a 24h window and insights for every known agent */
+  /** Record a detection pass: replace latest insights and fire callbacks */
+  private recordInsights(insights: RecordedInsight[]): RecordedInsight[] {
+    this._latestInsights = insights;
+    for (const insight of insights) {
+      this._onInsight?.(insight);
+    }
+    return insights;
+  }
+
+  /** Compute 24h windows and insights for every known agent plus the fleet */
   private runAutoCompute(): void {
+    const now = new Date();
+    const collected: RecordedInsight[] = [];
+
     for (const agentId of this.store.agentIds()) {
       try {
-        const result = this.computeAnalyticsWindow({ duration: '24h', agentId });
-        this.getInsights(result);
+        const result = this.computeAnalyticsWindow({ duration: '24h', agentId }, now);
+        collected.push(...detectInsights(result, now));
       } catch (error) {
         this._onError?.(error, agentId);
       }
     }
+
+    try {
+      const windowConfig: WindowConfig = { duration: '24h' };
+      const snapshot = this.getOrchestrationSnapshot({}, windowConfig, now);
+      collected.push(...detectFleetInsights(snapshot, windowConfig, now));
+    } catch (error) {
+      this._onError?.(error);
+    }
+
+    this.recordInsights(collected);
   }
 }

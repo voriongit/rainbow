@@ -84,7 +84,7 @@ export type {
   ProofEventReference,
   RecordedInsight,
 } from './insight/index.js';
-export { detectInsights } from './insight/index.js';
+export { detectInsights, detectFleetInsights } from './insight/index.js';
 
 // ── Rainbow Facade ──
 export type { RainbowConfig } from './rainbow.js';
