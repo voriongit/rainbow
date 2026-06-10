@@ -40,7 +40,9 @@ const FAILURE_RATE_THRESHOLD = 0.5;
 /**
  * Detect anomaly clusters from signals across multiple agents.
  *
- * Groups agents that share failing factors above the threshold.
+ * Groups agents that share failing factors above the threshold, greedily
+ * narrowing the cluster's common factor set as each agent joins so that a
+ * cluster is never discarded for lack of a factor shared by every member.
  */
 export function detectAnomalyClusters(
   signals: IngestedSignal[],
@@ -96,42 +98,35 @@ export function detectAnomalyClusters(
     if (visited.has(agentA)) continue;
 
     const clusterAgents = [agentA];
-    const clusterFactorSets = [factorsA];
+    let commonFactors = [...factorsA];
 
     for (let j = i + 1; j < agentEntries.length; j++) {
       const [agentB, factorsB] = agentEntries[j];
       if (visited.has(agentB)) continue;
 
-      // Find intersection
-      const shared = [...factorsA].filter((f) => factorsB.has(f));
+      // Only admit agents that keep the running common factor set non-empty
+      const shared = commonFactors.filter((f) => factorsB.has(f));
       if (shared.length > 0) {
         clusterAgents.push(agentB);
-        clusterFactorSets.push(factorsB);
+        commonFactors = shared;
       }
     }
 
     if (clusterAgents.length >= MIN_CLUSTER_SIZE) {
-      // Find common factors across ALL agents in cluster
-      const commonFactors = [...clusterFactorSets[0]].filter((f) =>
-        clusterFactorSets.every((s) => s.has(f))
-      );
+      for (const id of clusterAgents) visited.add(id);
 
-      if (commonFactors.length > 0) {
-        for (const id of clusterAgents) visited.add(id);
+      const severity: AnomalyCluster['severity'] =
+        clusterAgents.length >= 5 ? 'emergency' :
+        clusterAgents.length >= 3 ? 'critical' : 'warning';
 
-        const severity: AnomalyCluster['severity'] =
-          clusterAgents.length >= 5 ? 'emergency' :
-          clusterAgents.length >= 3 ? 'critical' : 'warning';
-
-        clusters.push({
-          clusterId: `cluster-${String(++clusterIdx)}`,
-          agentIds: clusterAgents,
-          commonFactors,
-          detectedAt: now,
-          severity,
-          description: `${String(clusterAgents.length)} agents sharing failures in ${commonFactors.join(', ')}`,
-        });
-      }
+      clusters.push({
+        clusterId: `cluster-${String(++clusterIdx)}`,
+        agentIds: clusterAgents,
+        commonFactors,
+        detectedAt: now,
+        severity,
+        description: `${String(clusterAgents.length)} agents sharing failures in ${commonFactors.join(', ')}`,
+      });
     }
   }
 

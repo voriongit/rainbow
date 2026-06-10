@@ -19,7 +19,14 @@ export type {
   RiskTrend,
   AnalyticsWindowResult,
 } from './types.js';
-export { WINDOW_DURATION_MS } from './types.js';
+export {
+  WINDOW_DURATION_MS,
+  DEFAULT_CUSTOM_WINDOW_MS,
+  resolveWindowDurationMs,
+} from './types.js';
+
+// ── Contracts (vendored from @vorionsys/contracts trust-bus) ──
+export { BusSignalType, BusSeverity } from './contracts-stubs.js';
 
 // ── Collector ──
 export type { IngestedSignal, CollectorConfig } from './collector/index.js';

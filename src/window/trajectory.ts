@@ -10,6 +10,7 @@
 
 import type { IngestedSignal } from '../collector/collector-types.js';
 import type { ScoreTrajectory, TrustTrend } from '../types.js';
+import { clampScore } from '../tiers.js';
 
 /** Minimum velocity magnitude to count as rising/falling (points/hour) */
 const STABLE_THRESHOLD = 0.5;
@@ -46,8 +47,7 @@ export function computeTrajectory(
   let max = initialScore;
 
   for (const signal of signals) {
-    score += signal.delta;
-    score = Math.max(0, Math.min(1000, score));
+    score = clampScore(score + signal.delta);
     min = Math.min(min, score);
     max = Math.max(max, score);
     samples.push({ timestamp: signal.timestamp, score });

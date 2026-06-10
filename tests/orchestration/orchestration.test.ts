@@ -156,6 +156,27 @@ describe('detectAnomalyClusters', () => {
     const clusters = detectAnomalyClusters(signals);
     expect(clusters).toHaveLength(0);
   });
+
+  it('still detects a cluster when a third agent shares a different factor', () => {
+    // a1 fails CT-COMP and CT-REL; a2 shares CT-COMP, a3 shares CT-REL.
+    // No single factor is common to all three, but the a1+a2 cluster on
+    // CT-COMP must still be detected rather than discarded.
+    const signals = [
+      makeSignal('a1', 'CT-COMP', false),
+      makeSignal('a1', 'CT-COMP', false),
+      makeSignal('a1', 'CT-REL', false),
+      makeSignal('a1', 'CT-REL', false),
+      makeSignal('a2', 'CT-COMP', false),
+      makeSignal('a2', 'CT-COMP', false),
+      makeSignal('a3', 'CT-REL', false),
+      makeSignal('a3', 'CT-REL', false),
+    ];
+
+    const clusters = detectAnomalyClusters(signals);
+    expect(clusters).toHaveLength(1);
+    expect(clusters[0]!.agentIds).toEqual(['a1', 'a2']);
+    expect(clusters[0]!.commonFactors).toEqual(['CT-COMP']);
+  });
 });
 
 describe('computeOrchestrationSnapshot', () => {

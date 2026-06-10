@@ -89,5 +89,44 @@ describe('SignalCollector', () => {
     collector.ingestMetrics({ agentId: 'a1', factorCode: 'CT-COMP', success: true, blocked: false, delta: 1, durationMs: 5, timestamp: t });
     collector.clearAgent('a1');
     expect(collector.count('a1')).toBe(0);
+    expect(collector.agentIds()).not.toContain('a1');
+  });
+
+  it('ingests pre-formed signals directly and returns the latest', () => {
+    const collector = new SignalCollector();
+    const t1 = new Date('2026-01-01T12:00:00Z');
+    const t2 = new Date('2026-01-01T12:05:00Z');
+
+    collector.ingest({ signalId: 's1', agentId: 'a1', tenantId: 't', timestamp: t1, success: true, delta: 1, blocked: false });
+    collector.ingest({ signalId: 's2', agentId: 'a1', tenantId: 't', timestamp: t2, success: false, delta: -1, blocked: false });
+
+    expect(collector.count('a1')).toBe(2);
+    expect(collector.latest('a1')?.signalId).toBe('s2');
+    expect(collector.latest('unknown')).toBeUndefined();
+  });
+
+  it('tags correlation alert signals as fleet anomalies', () => {
+    const collector = new SignalCollector();
+
+    const critical = collector.ingestCorrelationAlert({
+      agentIds: ['a1', 'a2'],
+      pattern: 'COLLUSION',
+      severity: 'critical',
+      detectedAt: new Date('2026-01-01T12:00:00Z'),
+    });
+    expect(critical).toHaveLength(2);
+    expect(critical[0]!.busSignalType).toBe('fleet_anomaly');
+    expect(critical[0]!.severity).toBe('critical');
+    expect(critical[0]!.metadata).toMatchObject({ correlationPattern: 'COLLUSION' });
+
+    // 'warning' is not a BusSeverity; it stays in metadata only
+    const warning = collector.ingestCorrelationAlert({
+      agentIds: ['a3'],
+      pattern: 'SHARED_VULNERABILITY',
+      severity: 'warning',
+      detectedAt: new Date('2026-01-01T12:00:00Z'),
+    });
+    expect(warning[0]!.severity).toBeUndefined();
+    expect(warning[0]!.metadata).toMatchObject({ correlationSeverity: 'warning' });
   });
 });

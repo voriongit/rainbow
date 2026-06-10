@@ -7,22 +7,9 @@
  * @module @vorionsys/rainbow/window
  */
 
-import { TRUST_TIERS } from '@vorionsys/basis';
 import type { IngestedSignal } from '../collector/collector-types.js';
 import type { StateTransitionSummary } from '../types.js';
-
-/** Trust tier boundaries as sorted array for tier lookup */
-const TIER_BOUNDARIES = Object.entries(TRUST_TIERS)
-  .map(([key, val]) => ({ tier: key, min: val.min, max: val.max }))
-  .sort((a, b) => a.min - b.min);
-
-/** Get tier index (0-7) from a trust score */
-function getTierIndex(score: number): number {
-  for (let i = TIER_BOUNDARIES.length - 1; i >= 0; i--) {
-    if (score >= TIER_BOUNDARIES[i].min) return i;
-  }
-  return 0;
-}
+import { clampScore, getTierIndex } from '../tiers.js';
 
 /**
  * Compute state transitions from sequential signals.
@@ -46,8 +33,7 @@ export function computeTransitions(
   let inDegraded = false;
 
   for (const signal of signals) {
-    score += signal.delta;
-    score = Math.max(0, Math.min(1000, score));
+    score = clampScore(score + signal.delta);
     const newTier = getTierIndex(score);
 
     // Tier transitions

@@ -76,20 +76,21 @@ export function computeDelegationHealth(
     : 0;
 
   // Pair counts
-  const pairCounts = new Map<string, number>();
+  const pairStats = new Map<string, { requestor: string; handler: string; count: number }>();
   const requestorTotals = new Map<string, number>();
 
   for (const event of events) {
-    const key = `${event.requestorId}→${event.handlerId}`;
-    pairCounts.set(key, (pairCounts.get(key) ?? 0) + 1);
+    const key = JSON.stringify([event.requestorId, event.handlerId]);
+    const entry = pairStats.get(key);
+    if (entry) {
+      entry.count++;
+    } else {
+      pairStats.set(key, { requestor: event.requestorId, handler: event.handlerId, count: 1 });
+    }
     requestorTotals.set(event.requestorId, (requestorTotals.get(event.requestorId) ?? 0) + 1);
   }
 
-  const topEscalationPairs = [...pairCounts.entries()]
-    .map(([key, count]) => {
-      const [requestor, handler] = key.split('→');
-      return { requestor: requestor, handler: handler, count };
-    })
+  const topEscalationPairs = [...pairStats.values()]
     .sort((a, b) => b.count - a.count)
     .slice(0, 10);
 
