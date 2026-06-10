@@ -4,6 +4,15 @@ All notable changes to `@vorionsys/rainbow` are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versioning follows [SemVer](https://semver.org/).
 
+## [0.2.1] — 2026-06-10
+
+Identical source to 0.2.0. Version bump only: the `0.2.0` version number was
+consumed by a manual publish from a stale pre-extraction checkout whose
+artifact does not correspond to this repository's source (missing the tier
+helpers and fleet insight modules, and declaring the retired
+`@basis-spec/basis` dependency). That artifact is deprecated; 0.2.1 is the
+first registry version built from this repository via CI. Do not use 0.2.0.
+
 ## [0.2.0] — 2026-06-10
 
 ### Added
