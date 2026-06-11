@@ -19,15 +19,30 @@ jobs:
           node-version: '22'
           cache: npm
           registry-url: 'https://registry.npmjs.org'
+      - name: Skip if version already on the registry
+        id: check
+        run: |
+          PKG=$(node -p "require('./package.json').name")
+          VER=$(node -p "require('./package.json').version")
+          if [ -n "$(npm view "$PKG@$VER" version 2>/dev/null)" ]; then
+            echo "$PKG@$VER already published — skipping (idempotent re-run)."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
       - name: Update npm (trusted publishing requires npm >= 11.5.1)
+        if: steps.check.outputs.skip != 'true'
         run: npm install -g npm@latest
       - name: Install
+        if: steps.check.outputs.skip != 'true'
         run: npm ci
       - name: Gates
+        if: steps.check.outputs.skip != 'true'
         run: |
           npm run typecheck
           npm run lint
           npm run build
           npm run test:coverage
       - name: Publish (tokenless OIDC, provenance)
+        if: steps.check.outputs.skip != 'true'
         run: npm publish --provenance --access public
