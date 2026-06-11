@@ -1,5 +1,9 @@
 # @vorionsys/rainbow
 
+[![npm version](https://img.shields.io/npm/v/%40vorionsys%2Frainbow)](https://www.npmjs.com/package/@vorionsys/rainbow)
+[![CI](https://github.com/voriongit/rainbow/actions/workflows/ci.yml/badge.svg)](https://github.com/voriongit/rainbow/actions/workflows/ci.yml)
+[![license](https://img.shields.io/npm/l/%40vorionsys%2Frainbow)](LICENSE)
+
 **RAINBOW** — **R**ecorded **A**nalytics **I**nvolving **N**on-**B**inary **O**rchestration **W**indow.
 
 Operator-facing analytics abstraction sitting between the Trust Signal Bus

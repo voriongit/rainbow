@@ -127,6 +127,8 @@ export interface RiskTrend {
   trend: RiskEscalation;
   /** Sampled accumulator values */
   samples: Array<{ timestamp: Date; value: number }>;
+  /** Failures excluded (missing/invalid tier or unknown risk level) — non-zero means the reconstruction under-counts */
+  excludedFromAccumulator: number;
 }
 
 // ============================================================================
