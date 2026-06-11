@@ -40,6 +40,7 @@ function makeResult(overrides: Partial<AnalyticsWindowResult> = {}): AnalyticsWi
       degradedBreaches: 0,
       trend: 'stable',
       samples: [],
+      excludedFromAccumulator: 0,
     },
     ...overrides,
   };
@@ -117,6 +118,7 @@ describe('detectInsights', () => {
         degradedBreaches: 1,
         trend: 'escalating',
         samples: [],
+        excludedFromAccumulator: 0,
       },
     });
 
@@ -201,6 +203,7 @@ describe('detectInsights', () => {
         degradedBreaches: 2,
         trend: 'escalating',
         samples: [],
+        excludedFromAccumulator: 0,
       },
     });
 

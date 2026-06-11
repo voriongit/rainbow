@@ -4,21 +4,55 @@
  * Reconstructs the 24h rolling risk accumulator from failure signals and
  * tracks threshold breaches against canonical parameters.
  *
+ * Per-failure contribution is the canonical `P(T) × R` (BASIS loss formula):
+ *   P(T) = PENALTY_RATIO_MIN + (T / 7) × (PENALTY_RATIO_MAX − PENALTY_RATIO_MIN)
+ *        = 3 + T with canonical defaults (3× at T0 … 10× at T7)
+ *   R    = RISK_LEVELS[riskLevel].multiplier
+ * which is the same unit the RISK_ACCUMULATOR thresholds (60 / 120 / 240)
+ * are calibrated against.
+ *
+ * Failure signals that cannot contribute exactly — missing `tierAfter` or an
+ * unrecognized `riskLevel` — are EXCLUDED rather than estimated, and counted
+ * in `excludedFromAccumulator`. The reconstruction therefore under-counts
+ * when signal sources omit tier data; it never fabricates a tier.
+ *
  * @module @vorionsys/rainbow/window
  */
 
-import { RISK_ACCUMULATOR, RISK_LEVELS } from '@vorionsys/basis';
+import {
+  PENALTY_RATIO_MAX,
+  PENALTY_RATIO_MIN,
+  RISK_ACCUMULATOR,
+  RISK_LEVELS,
+} from '@vorionsys/basis';
 import type { IngestedSignal } from '../collector/collector-types.js';
 import type { RiskTrend, RiskEscalation } from '../types.js';
 
 /** 24h window in ms */
 const ACCUMULATOR_WINDOW_MS = RISK_ACCUMULATOR.windowHours * 60 * 60 * 1_000;
 
+/** Highest canonical trust tier index (T0–T7). */
+const MAX_TIER_INDEX = 7;
+
+/**
+ * Canonical tier-scaled penalty ratio P(T) over tier index 0..7.
+ * Linear interpolation between PENALTY_RATIO_MIN (T0) and PENALTY_RATIO_MAX (T7);
+ * with canonical constants this is exactly 3 + T.
+ */
+function penaltyRatio(tierIndex: number): number {
+  return (
+    PENALTY_RATIO_MIN +
+    (tierIndex / MAX_TIER_INDEX) * (PENALTY_RATIO_MAX - PENALTY_RATIO_MIN)
+  );
+}
+
 /**
  * Compute the risk accumulator trend from signals.
  *
  * Simulates the rolling 24h risk accumulator by replaying failure signals
- * and tracking the value at each point.
+ * and tracking the value at each point. Each replayed failure contributes
+ * `P(tierAfter) × R(riskLevel)`; failures without a usable tier or risk
+ * level are excluded and tallied in `excludedFromAccumulator`.
  */
 export function computeRiskTrend(signals: IngestedSignal[]): RiskTrend {
   if (signals.length === 0) {
@@ -29,23 +63,27 @@ export function computeRiskTrend(signals: IngestedSignal[]): RiskTrend {
       degradedBreaches: 0,
       trend: 'stable',
       samples: [],
+      excludedFromAccumulator: 0,
     };
   }
 
-  // Collect failure events with their risk contribution
+  // Collect failure events with their canonical risk contribution
   const failureEvents: Array<{ timestamp: Date; riskContribution: number }> = [];
+  let excludedFromAccumulator = 0;
 
   for (const signal of signals) {
     if (!signal.success && !signal.blocked && signal.riskLevel) {
       const riskLevels: Record<string, { multiplier: number } | undefined> = RISK_LEVELS;
       const riskEntry = riskLevels[signal.riskLevel];
-      if (riskEntry) {
-        // Simplified: use risk multiplier as contribution
-        // Full formula would be P(T) × R, but we don't have tier in signal
+      const tier = usableTierIndex(signal.tierAfter);
+      if (riskEntry && tier !== undefined) {
         failureEvents.push({
           timestamp: signal.timestamp,
-          riskContribution: riskEntry.multiplier,
+          riskContribution: penaltyRatio(tier) * riskEntry.multiplier,
         });
+      } else {
+        // Missing/invalid tier or unknown risk level: exclude, never estimate.
+        excludedFromAccumulator++;
       }
     }
   }
@@ -101,7 +139,20 @@ export function computeRiskTrend(signals: IngestedSignal[]): RiskTrend {
     degradedBreaches,
     trend,
     samples,
+    excludedFromAccumulator,
   };
+}
+
+/**
+ * Validate a signal's `tierAfter` into a canonical tier index, or undefined
+ * when the signal cannot contribute exactly (absent / non-finite / out of
+ * the T0–T7 range). Fractional in-range values are truncated.
+ */
+function usableTierIndex(tierAfter: number | undefined): number | undefined {
+  if (tierAfter === undefined || !Number.isFinite(tierAfter)) return undefined;
+  const tier = Math.trunc(tierAfter);
+  if (tier < 0 || tier > MAX_TIER_INDEX) return undefined;
+  return tier;
 }
 
 function determineTrend(
