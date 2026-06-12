@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { detectInsights } from '../../src/insight/trend-assertion.js';
+import { BusSignalType } from '../../src/contracts-stubs.js';
 import type { AnalyticsWindowResult } from '../../src/types.js';
 
 function makeResult(overrides: Partial<AnalyticsWindowResult> = {}): AnalyticsWindowResult {
@@ -216,5 +217,41 @@ describe('detectInsights', () => {
     expect(categories).toContain('TREND_DETECTED');
     expect(categories).toContain('CB_PATTERN');
     expect(categories).toContain('ACCUMULATOR_ESCALATION');
+  });
+
+  it('detects dormancy deductions', () => {
+    const result = makeResult({
+      distribution: {
+        total: 1,
+        byOutcome: { success: 1, failure: 0, blocked: 0 },
+        byType: { [BusSignalType.DORMANCY_DEDUCTION]: 1 },
+        byRiskLevel: {},
+        bySeverity: {},
+        byFactor: {},
+      },
+    });
+
+    const insights = detectInsights(result);
+    const dormancy = insights.find((i) => i.category === 'DORMANCY_WARNING');
+    expect(dormancy).toBeDefined();
+    expect(dormancy!.severity).toBe('info');
+    expect(dormancy!.agentIds).toEqual(['agent-1']);
+  });
+
+  it('escalates dormancy severity at three or more deductions', () => {
+    const result = makeResult({
+      distribution: {
+        total: 3,
+        byOutcome: { success: 3, failure: 0, blocked: 0 },
+        byType: { [BusSignalType.DORMANCY_DEDUCTION]: 3 },
+        byRiskLevel: {},
+        bySeverity: {},
+        byFactor: {},
+      },
+    });
+
+    const insights = detectInsights(result);
+    const dormancy = insights.find((i) => i.category === 'DORMANCY_WARNING');
+    expect(dormancy!.severity).toBe('warning');
   });
 });

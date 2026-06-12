@@ -36,6 +36,8 @@ export interface DelegationHealthSummary {
   averageResolutionTimeMs: number;
   /** Most frequent requestor→handler pairs */
   topEscalationPairs: Array<{ requestor: string; handler: string; count: number }>;
+  /** Requestor→handler pairs exceeding the collusion share threshold */
+  collusionPairs: Array<{ requestor: string; handler: string; count: number; share: number }>;
   /** Whether any pair exceeds the collusion risk threshold */
   potentialCollusionRisk: boolean;
 }
@@ -60,6 +62,7 @@ export function computeDelegationHealth(
       rejectedEscalations: 0,
       averageResolutionTimeMs: 0,
       topEscalationPairs: [],
+      collusionPairs: [],
       potentialCollusionRisk: false,
     };
   }
@@ -76,30 +79,30 @@ export function computeDelegationHealth(
     : 0;
 
   // Pair counts
-  const pairCounts = new Map<string, number>();
+  const pairStats = new Map<string, { requestor: string; handler: string; count: number }>();
   const requestorTotals = new Map<string, number>();
 
   for (const event of events) {
-    const key = `${event.requestorId}→${event.handlerId}`;
-    pairCounts.set(key, (pairCounts.get(key) ?? 0) + 1);
+    const key = JSON.stringify([event.requestorId, event.handlerId]);
+    const entry = pairStats.get(key);
+    if (entry) {
+      entry.count++;
+    } else {
+      pairStats.set(key, { requestor: event.requestorId, handler: event.handlerId, count: 1 });
+    }
     requestorTotals.set(event.requestorId, (requestorTotals.get(event.requestorId) ?? 0) + 1);
   }
 
-  const topEscalationPairs = [...pairCounts.entries()]
-    .map(([key, count]) => {
-      const [requestor, handler] = key.split('→');
-      return { requestor: requestor, handler: handler, count };
-    })
+  const topEscalationPairs = [...pairStats.values()]
     .sort((a, b) => b.count - a.count)
     .slice(0, 10);
 
-  // Collusion detection: any requestor sending >80% to one handler?
-  let potentialCollusionRisk = false;
-  for (const { requestor, count } of topEscalationPairs) {
-    const total = requestorTotals.get(requestor) ?? 0;
-    if (total >= 3 && count / total >= COLLUSION_PAIR_THRESHOLD) {
-      potentialCollusionRisk = true;
-      break;
+  // Collusion detection: any requestor sending >80% of escalations to one handler?
+  const collusionPairs: DelegationHealthSummary['collusionPairs'] = [];
+  for (const pair of topEscalationPairs) {
+    const total = requestorTotals.get(pair.requestor) ?? 0;
+    if (total >= 3 && pair.count / total >= COLLUSION_PAIR_THRESHOLD) {
+      collusionPairs.push({ ...pair, share: pair.count / total });
     }
   }
 
@@ -109,6 +112,7 @@ export function computeDelegationHealth(
     rejectedEscalations,
     averageResolutionTimeMs,
     topEscalationPairs,
-    potentialCollusionRisk,
+    collusionPairs,
+    potentialCollusionRisk: collusionPairs.length > 0,
   };
 }

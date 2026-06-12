@@ -25,16 +25,26 @@ export const WINDOW_DURATION_MS: Record<Exclude<WindowDuration, 'custom'>, numbe
   '30d': 30 * 24 * 60 * 60 * 1_000,
 };
 
+/** Fallback duration applied when `duration === 'custom'` but `customMs` is omitted */
+export const DEFAULT_CUSTOM_WINDOW_MS = WINDOW_DURATION_MS['24h'];
+
 /** Configuration for an analytics window query */
 export interface WindowConfig {
   /** Window duration preset */
   duration: WindowDuration;
-  /** Custom duration in ms (required when duration === 'custom') */
+  /** Custom duration in ms (used when duration === 'custom'; falls back to 24h when omitted) */
   customMs?: number;
   /** Single agent or omit for fleet-wide */
   agentId?: string;
   /** Tenant scope */
   tenantId?: string;
+}
+
+/** Resolve a window configuration to its duration in milliseconds */
+export function resolveWindowDurationMs(config: WindowConfig): number {
+  return config.duration === 'custom'
+    ? (config.customMs ?? DEFAULT_CUSTOM_WINDOW_MS)
+    : WINDOW_DURATION_MS[config.duration];
 }
 
 // ============================================================================
@@ -104,11 +114,6 @@ export interface StateTransitionSummary {
 
 export type RiskEscalation = 'escalating' | 'de-escalating' | 'stable';
 
-/**
- * Risk accumulator reconstruction in canonical units: each replayed failure
- * contributes `P(tierAfter) × R(riskLevel)` (the BASIS loss-formula increment
- * the RISK_ACCUMULATOR thresholds are calibrated against).
- */
 export interface RiskTrend {
   /** Current accumulator value */
   currentAccumulatorValue: number;
@@ -122,12 +127,7 @@ export interface RiskTrend {
   trend: RiskEscalation;
   /** Sampled accumulator values */
   samples: Array<{ timestamp: Date; value: number }>;
-  /**
-   * Failure signals excluded from the reconstruction because `tierAfter`
-   * was absent/invalid or `riskLevel` was unrecognized. A non-zero value
-   * means the accumulator under-counts true risk pressure; tiers are never
-   * estimated to fill the gap.
-   */
+  /** Failures excluded (missing/invalid tier or unknown risk level) — non-zero means the reconstruction under-counts */
   excludedFromAccumulator: number;
 }
 

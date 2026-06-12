@@ -106,6 +106,8 @@ describe('computeDelegationHealth', () => {
     expect(result.potentialCollusionRisk).toBe(true);
     expect(result.topEscalationPairs[0]!.requestor).toBe('a1');
     expect(result.topEscalationPairs[0]!.handler).toBe('a2');
+    expect(result.collusionPairs).toHaveLength(1);
+    expect(result.collusionPairs[0]!).toMatchObject({ requestor: 'a1', handler: 'a2', count: 4, share: 1 });
   });
 
   it('no collusion when distributed', () => {
@@ -118,6 +120,7 @@ describe('computeDelegationHealth', () => {
 
     const result = computeDelegationHealth(events);
     expect(result.potentialCollusionRisk).toBe(false);
+    expect(result.collusionPairs).toHaveLength(0);
   });
 
   it('handles empty events', () => {
@@ -155,6 +158,27 @@ describe('detectAnomalyClusters', () => {
 
     const clusters = detectAnomalyClusters(signals);
     expect(clusters).toHaveLength(0);
+  });
+
+  it('still detects a cluster when a third agent shares a different factor', () => {
+    // a1 fails CT-COMP and CT-REL; a2 shares CT-COMP, a3 shares CT-REL.
+    // No single factor is common to all three, but the a1+a2 cluster on
+    // CT-COMP must still be detected rather than discarded.
+    const signals = [
+      makeSignal('a1', 'CT-COMP', false),
+      makeSignal('a1', 'CT-COMP', false),
+      makeSignal('a1', 'CT-REL', false),
+      makeSignal('a1', 'CT-REL', false),
+      makeSignal('a2', 'CT-COMP', false),
+      makeSignal('a2', 'CT-COMP', false),
+      makeSignal('a3', 'CT-REL', false),
+      makeSignal('a3', 'CT-REL', false),
+    ];
+
+    const clusters = detectAnomalyClusters(signals);
+    expect(clusters).toHaveLength(1);
+    expect(clusters[0]!.agentIds).toEqual(['a1', 'a2']);
+    expect(clusters[0]!.commonFactors).toEqual(['CT-COMP']);
   });
 });
 

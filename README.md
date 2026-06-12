@@ -1,5 +1,9 @@
 # @vorionsys/rainbow
 
+[![npm version](https://img.shields.io/npm/v/%40vorionsys%2Frainbow)](https://www.npmjs.com/package/@vorionsys/rainbow)
+[![CI](https://github.com/voriongit/rainbow/actions/workflows/ci.yml/badge.svg)](https://github.com/voriongit/rainbow/actions/workflows/ci.yml)
+[![license](https://img.shields.io/npm/l/%40vorionsys%2Frainbow)](LICENSE)
+
 **RAINBOW** — **R**ecorded **A**nalytics **I**nvolving **N**on-**B**inary **O**rchestration **W**indow.
 
 Operator-facing analytics abstraction sitting between the Trust Signal Bus
@@ -15,7 +19,9 @@ aggregations (1h / 6h / 24h / 7d / 30d) over trust signals and produces:
 - **Per-factor health** — across the 16 canonical trust factors
 - **Fleet-wide orchestration** — distribution, delegation health, anomaly clustering
 - **Rule-based insights** — trend detection, CB patterns, accumulator
-  escalation, factor degradation, promotion candidates
+  escalation, factor degradation, promotion candidates, dormancy warnings,
+  fleet anomalies, delegation risk (`evidenceChain` reserved for the future
+  proof-plane integration)
 
 Part of the **Vorion** AI governance ecosystem. RAINBOW consumes
 [`@vorionsys/contracts`](https://www.npmjs.com/package/@vorionsys/contracts) bus signal types and
@@ -43,15 +49,30 @@ npm install @vorionsys/rainbow
 ```ts
 import { Rainbow } from '@vorionsys/rainbow';
 
-const rainbow = new Rainbow();
+const rainbow = new Rainbow({
+  // Optional: resolve an agent's score at window start (improves trajectories)
+  resolveInitialScore: (agentId, at) => trustEngine.scoreAt(agentId, at),
+  // Optional: push detected insights to the bus / proof plane
+  onInsight: (insight) => bus.publish(insight),
+});
 
-// Ingest a trust signal from the Trust Signal Bus
+// Ingest from the TrustSignalPipeline callbacks (primary path)
+pipeline.onSignalProcessed = (m) => rainbow.ingestMetrics(m);
+pipeline.onBlocked = (e) => rainbow.ingestBlocked(e);
+
+// Or ingest a pre-formed trust signal directly
 rainbow.ingest(signal);
 
-// Query a windowed view
-const window = rainbow.window('24h');
+// Query windowed views
+const window = rainbow.window('24h');                              // fleet-wide
+const agent = rainbow.window({ duration: '6h', agentId: 'a-1' });  // per-agent
 const insights = rainbow.insights('24h');
 const fleet = rainbow.fleet('24h');
+
+// Optional: recompute insights on an interval (never holds the process open)
+rainbow.start();   // uses computeIntervalMs (default 60s)
+// ...
+rainbow.dispose();
 ```
 
 Submodule entry points are also available:
@@ -96,6 +117,7 @@ npm install
 npm run build       # tsc
 npm test            # vitest run
 npm run typecheck   # tsc --noEmit
+npm run lint        # eslint src
 npm run test:coverage
 ```
 

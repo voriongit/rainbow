@@ -7,8 +7,8 @@
  * @module @vorionsys/rainbow/orchestration
  */
 
-import { TRUST_TIERS } from '@vorionsys/basis-spec';
 import type { IngestedSignal } from '../collector/collector-types.js';
+import { clampScore, getTierKey } from '../tiers.js';
 
 // ============================================================================
 // Types
@@ -27,21 +27,6 @@ export interface FleetDistribution {
   medianScore: number;
   /** Standard deviation */
   standardDeviation: number;
-}
-
-// ============================================================================
-// Tier lookup
-// ============================================================================
-
-const TIER_ENTRIES = Object.entries(TRUST_TIERS)
-  .map(([key, val]) => ({ key, min: val.min, max: val.max }))
-  .sort((a, b) => a.min - b.min);
-
-function getTierKey(score: number): string {
-  for (let i = TIER_ENTRIES.length - 1; i >= 0; i--) {
-    if (score >= TIER_ENTRIES[i].min) return TIER_ENTRIES[i].key;
-  }
-  return 'T0';
 }
 
 // ============================================================================
@@ -118,8 +103,7 @@ export function estimateAgentScores(
 
   for (const signal of signals) {
     const current = scores.get(signal.agentId) ?? signal.scoreAfter ?? 0;
-    const updated = Math.max(0, Math.min(1000, current + signal.delta));
-    scores.set(signal.agentId, updated);
+    scores.set(signal.agentId, clampScore(current + signal.delta));
   }
 
   return scores;

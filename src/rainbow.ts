@@ -9,10 +9,11 @@
 
 import type {
   WindowConfig,
+  WindowDuration,
   AnalyticsWindowResult,
 } from './types.js';
-import { WINDOW_DURATION_MS } from './types.js';
-import { SignalCollector, type CollectorConfig, type PipelineMetrics, type PipelineBlockedEvent } from './collector/index.js';
+import { resolveWindowDurationMs } from './types.js';
+import { SignalCollector, type CollectorConfig, type IngestedSignal, type PipelineMetrics, type PipelineBlockedEvent } from './collector/index.js';
 import { MemoryWindowStore } from './window/memory-window-store.js';
 import type { WindowStore } from './window/window-store.js';
 import { computeWindow, type AnalyticsWindowConfig } from './window/analytics-window.js';
@@ -23,11 +24,14 @@ import {
   type OrchestrationInput,
 } from './orchestration/orchestration-analytics.js';
 import { detectInsights } from './insight/trend-assertion.js';
+import { detectFleetInsights } from './insight/fleet-assertion.js';
 import type { RecordedInsight } from './insight/insight-types.js';
 
 // ============================================================================
 // Configuration
 // ============================================================================
+
+const DEFAULT_COMPUTE_INTERVAL_MS = 60_000;
 
 export interface RainbowConfig {
   /** Collector configuration */
@@ -36,10 +40,17 @@ export interface RainbowConfig {
   store?: WindowStore;
   /** Function to resolve agent score at a point in time */
   resolveInitialScore?: (agentId: string, at: Date) => number;
-  /** Auto-compute interval in ms (default: 60_000, 0 = disabled) */
+  /** Auto-compute interval in ms used by start() (default: 60_000, 0 = disabled) */
   computeIntervalMs?: number;
   /** Called when a new insight is detected */
   onInsight?: (insight: RecordedInsight) => void;
+  /** Called when an auto-compute pass fails for an agent */
+  onError?: (error: unknown, agentId?: string) => void;
+}
+
+/** Accept either a duration preset or a full window configuration */
+function toWindowConfig(config: WindowDuration | WindowConfig): WindowConfig {
+  return typeof config === 'string' ? { duration: config } : config;
 }
 
 // ============================================================================
@@ -62,16 +73,19 @@ export interface RainbowConfig {
  * });
  *
  * // Query analytics
- * const window = rainbow.computeWindow({ duration: '24h', agentId: 'agent-1' });
+ * const window = rainbow.window('24h');
+ * const insights = rainbow.insights({ duration: '6h', agentId: 'agent-1' });
+ * const fleet = rainbow.fleet('24h');
  * const snapshot = rainbow.getStateSnapshot('agent-1', { compositeScore: 450, ... });
- * const insights = rainbow.getInsights(window);
  * ```
  */
 export class Rainbow {
   readonly collector: SignalCollector;
   private readonly store: WindowStore;
   private readonly resolveInitialScore?: (agentId: string, at: Date) => number;
+  private readonly computeIntervalMs: number;
   private readonly _onInsight?: (insight: RecordedInsight) => void;
+  private readonly _onError?: (error: unknown, agentId?: string) => void;
   private _computeTimer: ReturnType<typeof setInterval> | null = null;
   private _latestInsights: RecordedInsight[] = [];
 
@@ -85,7 +99,9 @@ export class Rainbow {
     });
     this.store = config.store ?? new MemoryWindowStore();
     this.resolveInitialScore = config.resolveInitialScore;
+    this.computeIntervalMs = config.computeIntervalMs ?? DEFAULT_COMPUTE_INTERVAL_MS;
     this._onInsight = config.onInsight;
+    this._onError = config.onError;
   }
 
   // ── Signal Ingestion ──
@@ -100,6 +116,11 @@ export class Rainbow {
     this.collector.ingestBlocked(event);
   }
 
+  /** Ingest a pre-formed signal directly (custom sources) */
+  ingest(signal: IngestedSignal): void {
+    this.collector.ingest(signal);
+  }
+
   /** Ingest a correlation alert */
   ingestCorrelationAlert(alert: {
     agentIds: string[];
@@ -111,6 +132,46 @@ export class Rainbow {
   }
 
   // ── Analytics ──
+
+  /**
+   * Compute a windowed analytics result.
+   * Shorthand for {@link computeAnalyticsWindow} accepting a bare duration.
+   */
+  window(
+    config: WindowDuration | WindowConfig = '24h',
+    now: Date = new Date()
+  ): AnalyticsWindowResult {
+    return this.computeAnalyticsWindow(toWindowConfig(config), now);
+  }
+
+  /** Compute a windowed analytics result and detect insights from it */
+  insights(
+    config: WindowDuration | WindowConfig = '24h',
+    now: Date = new Date()
+  ): RecordedInsight[] {
+    return this.getInsights(this.window(config, now), now);
+  }
+
+  /**
+   * Compute a fleet-wide orchestration snapshot.
+   * Shorthand for {@link getOrchestrationSnapshot} accepting a bare duration.
+   */
+  fleet(
+    config: WindowDuration | WindowConfig = '24h',
+    now: Date = new Date()
+  ): OrchestrationSnapshot {
+    return this.getOrchestrationSnapshot({}, toWindowConfig(config), now);
+  }
+
+  /** Compute a fleet orchestration snapshot and detect fleet-level insights from it */
+  fleetInsights(
+    config: WindowDuration | WindowConfig = '24h',
+    now: Date = new Date()
+  ): RecordedInsight[] {
+    const windowConfig = toWindowConfig(config);
+    const snapshot = this.getOrchestrationSnapshot({}, windowConfig, now);
+    return this.recordInsights(detectFleetInsights(snapshot, windowConfig, now));
+  }
 
   /** Compute a windowed analytics result */
   computeAnalyticsWindow(
@@ -131,10 +192,7 @@ export class Rainbow {
     windowConfig: WindowConfig = { duration: '24h', agentId },
     now: Date = new Date()
   ): NonBinaryStateSnapshot {
-    const durationMs = windowConfig.duration === 'custom'
-      ? (windowConfig.customMs ?? 86_400_000)
-      : WINDOW_DURATION_MS[windowConfig.duration];
-    const from = new Date(now.getTime() - durationMs);
+    const from = new Date(now.getTime() - resolveWindowDurationMs(windowConfig));
     const signals = this.store.query(agentId, from, now);
     return computeStateSnapshot(agentId, signals, context, now);
   }
@@ -145,10 +203,7 @@ export class Rainbow {
     windowConfig: WindowConfig = { duration: '24h' },
     now: Date = new Date()
   ): OrchestrationSnapshot {
-    const durationMs = windowConfig.duration === 'custom'
-      ? (windowConfig.customMs ?? 86_400_000)
-      : WINDOW_DURATION_MS[windowConfig.duration];
-    const from = new Date(now.getTime() - durationMs);
+    const from = new Date(now.getTime() - resolveWindowDurationMs(windowConfig));
     const signals = this.store.queryAll(from, now);
     return computeOrchestrationSnapshot({ ...input, signals }, now);
   }
@@ -158,32 +213,29 @@ export class Rainbow {
     result: AnalyticsWindowResult,
     now: Date = new Date()
   ): RecordedInsight[] {
-    const insights = detectInsights(result, now);
-    this._latestInsights = insights;
-    for (const insight of insights) {
-      this._onInsight?.(insight);
-    }
-    return insights;
+    return this.recordInsights(detectInsights(result, now));
   }
 
-  /** Get the most recently computed insights */
+  /** Get the insights from the most recent detection pass */
   get latestInsights(): RecordedInsight[] {
-    return this._latestInsights;
+    return [...this._latestInsights];
   }
 
   // ── Lifecycle ──
 
-  /** Start auto-computation on an interval */
-  start(intervalMs = 60_000): void {
+  /**
+   * Start auto-computation on an interval.
+   * Defaults to the configured computeIntervalMs; pass 0 to disable.
+   * The timer never holds the process open.
+   */
+  start(intervalMs: number = this.computeIntervalMs): void {
     this.stop();
     if (intervalMs <= 0) return;
     this._computeTimer = setInterval(() => {
-      // Auto-compute for all known agents
-      for (const agentId of this.collector.agentIds()) {
-        const result = this.computeAnalyticsWindow({ duration: '24h', agentId });
-        this.getInsights(result);
-      }
+      this.runAutoCompute();
     }, intervalMs);
+    // unref is a no-op outside Node-style timer environments
+    (this._computeTimer as { unref?: () => void }).unref?.();
   }
 
   /** Stop auto-computation */
@@ -200,5 +252,39 @@ export class Rainbow {
     this.collector.clear();
     this.store.clear();
     this._latestInsights = [];
+  }
+
+  /** Record a detection pass: replace latest insights and fire callbacks */
+  private recordInsights(insights: RecordedInsight[]): RecordedInsight[] {
+    this._latestInsights = insights;
+    for (const insight of insights) {
+      this._onInsight?.(insight);
+    }
+    return insights;
+  }
+
+  /** Compute 24h windows and insights for every known agent plus the fleet */
+  private runAutoCompute(): void {
+    const now = new Date();
+    const collected: RecordedInsight[] = [];
+
+    for (const agentId of this.store.agentIds()) {
+      try {
+        const result = this.computeAnalyticsWindow({ duration: '24h', agentId }, now);
+        collected.push(...detectInsights(result, now));
+      } catch (error) {
+        this._onError?.(error, agentId);
+      }
+    }
+
+    try {
+      const windowConfig: WindowConfig = { duration: '24h' };
+      const snapshot = this.getOrchestrationSnapshot({}, windowConfig, now);
+      collected.push(...detectFleetInsights(snapshot, windowConfig, now));
+    } catch (error) {
+      this._onError?.(error);
+    }
+
+    this.recordInsights(collected);
   }
 }

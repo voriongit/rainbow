@@ -19,7 +19,14 @@ export type {
   RiskTrend,
   AnalyticsWindowResult,
 } from './types.js';
-export { WINDOW_DURATION_MS } from './types.js';
+export {
+  WINDOW_DURATION_MS,
+  DEFAULT_CUSTOM_WINDOW_MS,
+  resolveWindowDurationMs,
+} from './types.js';
+
+// ── Contracts (vendored from @vorionsys/contracts trust-bus) ──
+export { BusSignalType, BusSeverity } from './contracts-stubs.js';
 
 // ── Collector ──
 export type { IngestedSignal, CollectorConfig } from './collector/index.js';
@@ -77,10 +84,10 @@ export type {
   ProofEventReference,
   RecordedInsight,
 } from './insight/index.js';
-export { detectInsights } from './insight/index.js';
+export { detectInsights, detectFleetInsights } from './insight/index.js';
 
 // ── Rainbow Facade ──
 export type { RainbowConfig } from './rainbow.js';
 export { Rainbow } from './rainbow.js';
 
-export const VERSION = '0.2.0';
+export const VERSION = '0.2.1';

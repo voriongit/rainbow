@@ -1,6 +1,6 @@
 {
   "name": "@vorionsys/rainbow",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "RAINBOW - Recorded Analytics Involving Non-Binary Orchestration Window",
   "type": "module",
   "main": "./dist/index.js",
@@ -34,6 +34,7 @@
   "files": [
     "dist"
   ],
+  "sideEffects": false,
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
@@ -42,7 +43,8 @@
     "test:coverage": "vitest run --coverage",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src",
-    "clean": "rm -rf dist"
+    "clean": "rm -rf dist",
+    "prepublishOnly": "npm run clean && npm run build"
   },
   "dependencies": {
     "@vorionsys/basis-spec": "^1.2.0",
@@ -63,12 +65,12 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/vorionsys/rainbow.git"
+    "url": "git+https://github.com/voriongit/rainbow.git"
   },
   "bugs": {
-    "url": "https://github.com/vorionsys/rainbow/issues"
+    "url": "https://github.com/voriongit/rainbow/issues"
   },
-  "homepage": "https://github.com/vorionsys/rainbow#readme",
+  "homepage": "https://vorion.org",
   "keywords": [
     "ai",
     "governance",
@@ -82,5 +84,8 @@
   ],
   "engines": {
     "node": ">=18.0.0"
+  },
+  "overrides": {
+    "drizzle-orm": "^0.45.2"
   }
 }
