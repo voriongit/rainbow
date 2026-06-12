@@ -8,7 +8,7 @@
  * @module @vorionsys/rainbow/state
  */
 
-import { TRUST_TIERS } from '@basis-spec/basis';
+import { TRUST_TIERS } from '@vorionsys/basis-spec';
 import type { IngestedSignal } from '../collector/collector-types.js';
 import type { FactorHealth } from './factor-health.js';
 import { computeFactorHealth } from './factor-health.js';

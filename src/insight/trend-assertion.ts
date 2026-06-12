@@ -10,7 +10,7 @@
  */
 
 import { v4 as uuidv4 } from 'uuid';
-import { RISK_ACCUMULATOR } from '@basis-spec/basis';
+import { RISK_ACCUMULATOR } from '@vorionsys/basis-spec';
 import type { AnalyticsWindowResult, WindowConfig } from '../types.js';
 import type { RecordedInsight, InsightSeverity, InsightCategory } from './insight-types.js';
 

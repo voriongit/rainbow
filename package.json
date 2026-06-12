@@ -45,7 +45,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@basis-spec/basis": "^1.2.0",
+    "@vorionsys/basis-spec": "^1.2.0",
     "@vorionsys/contracts": "^1.1.0",
     "uuid": "^11.0.4"
   },

@@ -7,7 +7,7 @@
  * @module @vorionsys/rainbow/orchestration
  */
 
-import { TRUST_TIERS } from '@basis-spec/basis';
+import { TRUST_TIERS } from '@vorionsys/basis-spec';
 import type { IngestedSignal } from '../collector/collector-types.js';
 
 // ============================================================================

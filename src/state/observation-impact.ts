@@ -7,7 +7,7 @@
  * @module @vorionsys/rainbow/state
  */
 
-import { OBSERVATION_TIERS } from '@basis-spec/basis';
+import { OBSERVATION_TIERS } from '@vorionsys/basis-spec';
 
 // ============================================================================
 // Types
