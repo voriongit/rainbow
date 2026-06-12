@@ -8,7 +8,7 @@
  * @module @vorionsys/rainbow/state
  */
 
-import { TRUST_FACTORS, TRUST_TIERS } from '@vorionsys/basis';
+import { TRUST_FACTORS, TRUST_TIERS } from '@vorionsys/basis-spec';
 import type { IngestedSignal } from '../collector/collector-types.js';
 import type { TrustTrend } from '../types.js';
 

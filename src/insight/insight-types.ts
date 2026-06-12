@@ -29,7 +29,13 @@ export interface ProofEventReference {
   summary: string;
 }
 
-/** A recorded analytics insight with evidence chain */
+/**
+ * A recorded analytics insight.
+ *
+ * Insights are rule-based: derived from window analytics thresholds, not
+ * from proof events. `evidenceChain` is reserved for a future proof-plane
+ * integration and is always empty in this version.
+ */
 export interface RecordedInsight {
   /** Unique insight identifier */
   insightId: string;
@@ -43,7 +49,7 @@ export interface RecordedInsight {
   title: string;
   /** Detailed description */
   description: string;
-  /** Links to proof events that support this finding */
+  /** Reserved for proof-plane integration; always empty in this version */
   evidenceChain: ProofEventReference[];
   /** When RAINBOW detected this insight */
   detectedAt: Date;

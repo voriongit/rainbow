@@ -4,6 +4,57 @@ All notable changes to `@vorionsys/rainbow` are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versioning follows [SemVer](https://semver.org/).
 
+## [Unreleased]
+
+Decontamination (PR #4): replaces vendored contract stubs with re-exports,
+sources trust constants from the published spec package, corrects the risk
+accumulator to the canonical formula, and relabels insights honestly.
+
+### Changed
+
+- **Risk accumulator now uses the canonical `P(T) × R` contribution**
+  (BASIS loss formula: `P(T) = 3 + T`, `R = RISK_LEVELS multiplier`).
+  Previously each failure contributed `R` alone, which compared
+  proxy-unit sums against thresholds (60/120) calibrated for `P(T) × R`
+  units. Failure signals without a usable `tierAfter` or with an
+  unrecognized `riskLevel` are excluded — never estimated — and counted in
+  the new `RiskTrend.excludedFromAccumulator` field. Accumulator values,
+  peaks, and breach counts all change for any window containing failures.
+- `src/contracts-stubs.ts` no longer vendors `BusSignalType`/`BusSeverity`;
+  it re-exports them from `@vorionsys/contracts/canonical/trust-bus`.
+  `@vorionsys/contracts@^1.1.0` returns as a real dependency (its
+  `drizzle-orm@^0.45.2` resolves clean of CVE-2026-39356; the override
+  guard from 0.2.0 is retained). A frozen-surface test pins the exact
+  member sets.
+- **Trust constants now come from `@vorionsys/basis-spec@^1.2.0`**
+  (`TRUST_FACTORS`, `TRUST_TIERS`, `OBSERVATION_TIERS`, `RISK_ACCUMULATOR`,
+  `RISK_LEVELS`, `PENALTY_RATIO_MIN/MAX`, `MIN`/`MAX_TRUST_SCORE`),
+  replacing the withdrawn `@vorionsys/basis@^2.0.0`. The package was
+  renamed from `@basis-spec/basis` before its first publish; tier
+  resolution in `src/tiers.ts` derives from `TRUST_TIERS` directly since
+  basis-spec deliberately exports parameters, not helper functions.
+- Insights relabeled from "proof-backed" to **rule-based**:
+  `RecordedInsight.evidenceChain` is reserved for a future proof-plane
+  integration and is always empty; docs and README now say so.
+- README: removed the internal provenance section; added a scope-and-
+  limitations section (rule-based insights, accumulator under-count,
+  white-box/synthetic-signal caveats); dropped the unnecessary
+  `--legacy-peer-deps` install flag.
+
+### Added
+
+- `RiskTrend.excludedFromAccumulator` — count of failure signals excluded
+  from the accumulator reconstruction (documents the under-count).
+- Unit tests for `computeRiskTrend` (canonical contributions, exclusion
+  semantics, rolling-window breach counting, trend determination).
+- Frozen-surface guard test for the re-exported trust-bus enums.
+- This changelog.
+
+### Removed
+
+- `zod` dependency (was unused — no `zod` import exists in `src/`) and the
+  README claims referencing RAINBOW Zod contracts.
+
 ## [0.2.1] — 2026-06-10
 
 Identical source to 0.2.0. Version bump only: the `0.2.0` version number was

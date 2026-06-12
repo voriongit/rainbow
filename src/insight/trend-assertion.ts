@@ -7,7 +7,7 @@
  * @module @vorionsys/rainbow/insight
  */
 
-import { RISK_ACCUMULATOR } from '@vorionsys/basis';
+import { RISK_ACCUMULATOR } from '@vorionsys/basis-spec';
 import { BusSignalType } from '../contracts-stubs.js';
 import type { AnalyticsWindowResult } from '../types.js';
 import type { RecordedInsight, InsightSeverity } from './insight-types.js';

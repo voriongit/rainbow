@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { MAX_TRUST_SCORE, MIN_TRUST_SCORE } from '@vorionsys/basis';
+import { MAX_TRUST_SCORE, MIN_TRUST_SCORE } from '@vorionsys/basis-spec';
 import { clampScore, getTierIndex, getTierKey } from '../src/tiers.js';
 
 describe('getTierIndex / getTierKey', () => {
