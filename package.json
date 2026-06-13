@@ -49,7 +49,7 @@
   "dependencies": {
     "@vorionsys/basis-spec": "^1.2.0",
     "@vorionsys/contracts": "^1.1.0",
-    "uuid": "^11.0.4"
+    "uuid": "^14.0.0"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
