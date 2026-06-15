@@ -7,10 +7,6 @@ updates:
     groups:
       dev-dependencies:
         dependency-type: development
-    ignore:
-      # @vorionsys/contracts pins peer typescript@^5; hold at 5.x until it widens.
-      - dependency-name: typescript
-        update-types: [version-update:semver-major]
   - package-ecosystem: github-actions
     directory: /
     schedule:

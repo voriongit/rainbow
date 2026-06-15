@@ -34,28 +34,22 @@ The full CI gate (`.github/workflows/ci.yml`, required check name: **`ci`**) run
   first publish. Any reference to `@vorionsys/basis` or `@basis-spec/basis` is stale.
   basis-spec exports *parameters*, not helper functions (tier resolution derives from
   `TRUST_TIERS` directly).
-- **`@vorionsys/contracts@^1.1.0`** (lockfile resolves 1.1.1) — bus signal types.
+- **`@vorionsys/contracts@^1.1.2`** — bus signal types.
   `BusSeverity` / `BusSignalType` are re-exported from
   `@vorionsys/contracts/canonical/trust-bus` via `src/contracts-stubs.ts`;
   `tests/contracts-surface.test.ts` pins the exact enum member sets as a tripwire.
+  (`1.1.2` widened its `typescript` peer to `^5.0.0 || ^6.0.0` — that's what
+  unblocked the TS6 bump below.)
 - **`uuid@^14`**.
 
-## ⚠️ TypeScript is pinned to 5.x ON PURPOSE — do NOT bump to 6 yet
+## TypeScript 6 (resolved 2026-06-15)
 
-`@vorionsys/contracts@1.1.x` declares `peerDependencies.typescript: "^5.0.0"`.
-rainbow's own code **is verified TS6-ready** (typecheck + full test suite pass under
-`tsc 6.0.3`), but `npm ci` fails `ERESOLVE` under TS6 because of that peer. Therefore:
-
-- `devDependencies.typescript` is held at `^5.9.3`.
-- `.github/dependabot.yml` ignores `typescript` **major** bumps (with an inline reason).
-
-**The real fix is upstream, not here:** in `vorionsys/contracts`, widen the peer to
-`"^5.0.0 || ^6.0.0"`, publish `contracts@1.1.2`. Then in rainbow: bump contracts to
-`^1.1.2`, `typescript` to `^6`, delete the dependabot `ignore`, regenerate the
-lockfile, PR. That flip is ~5 min and was pre-verified green. Don't paper over the peer
-with `.npmrc legacy-peer-deps` — that's a worse, repo-wide workaround.
-
-## Release process (tokenless — no tokens to rotate)
+rainbow is on **TypeScript 6** (`devDependencies.typescript: ^6.0.3`). The earlier
+`ERESOLVE`-on-TS6 blocker is gone: `@vorionsys/contracts@1.1.2` widened its peer to
+`"^5.0.0 || ^6.0.0"`, so `npm ci` resolves cleanly with TS6 and `contracts@^1.1.2`.
+Verified green (typecheck + lint + build + 115 tests under `tsc 6.0.3`). The dependabot
+`typescript`-major ignore was removed. Don't paper over peer conflicts with
+`.npmrc legacy-peer-deps` — fix the upstream peer instead, as was done here.
 
 - `.github/workflows/release.yml` triggers on pushing a `v*` tag or `workflow_dispatch`.
   Uses GitHub OIDC **trusted publishing** + `npm publish --provenance`. Requires the
@@ -102,7 +96,6 @@ and breach counts are **lower bounds** when signal sources omit tier data.
 
 ## Known follow-ups / queued
 
-- **Upstream contracts peer-widening** → unblocks TS6 here (see TypeScript section).
 - Insights are **rule-based**; `RecordedInsight.evidenceChain` is reserved and always
   empty (no proof-plane integration yet).
 - Optional hygiene: enable repo "Automatically delete head branches"; prune stale merged
