@@ -48,7 +48,7 @@
   },
   "dependencies": {
     "@vorionsys/basis-spec": "^1.2.0",
-    "@vorionsys/contracts": "^1.1.0",
+    "@vorionsys/contracts": "^1.1.2",
     "uuid": "^14.0.0"
   },
   "devDependencies": {
@@ -57,7 +57,7 @@
     "@types/uuid": "^11.0.0",
     "@vitest/coverage-v8": "^4.1.8",
     "eslint": "^10.4.1",
-    "typescript": "^5.9.3",
+    "typescript": "^6.0.3",
     "typescript-eslint": "^8.60.1",
     "vitest": "^4.0.18"
   },
