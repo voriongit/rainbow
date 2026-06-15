@@ -4,11 +4,12 @@ All notable changes to `@vorionsys/rainbow` are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/);
 versioning follows [SemVer](https://semver.org/).
 
-## [Unreleased]
+## [0.3.0] — 2026-06-15
 
-Decontamination (PR #4): replaces vendored contract stubs with re-exports,
-sources trust constants from the published spec package, corrects the risk
-accumulator to the canonical formula, and relabels insights honestly.
+First decontaminated release (PRs #4, #17): replaces vendored contract stubs
+with re-exports, sources trust constants from the published spec package,
+corrects the risk accumulator to the canonical formula, relabels insights
+honestly, and moves the toolchain to TypeScript 6.
 
 ### Changed
 
@@ -22,10 +23,14 @@ accumulator to the canonical formula, and relabels insights honestly.
   peaks, and breach counts all change for any window containing failures.
 - `src/contracts-stubs.ts` no longer vendors `BusSignalType`/`BusSeverity`;
   it re-exports them from `@vorionsys/contracts/canonical/trust-bus`.
-  `@vorionsys/contracts@^1.1.0` returns as a real dependency (its
+  `@vorionsys/contracts@^1.1.2` returns as a real dependency (its
   `drizzle-orm@^0.45.2` resolves clean of CVE-2026-39356; the override
   guard from 0.2.0 is retained). A frozen-surface test pins the exact
   member sets.
+- **Toolchain moved to TypeScript 6** (`devDependencies.typescript@^6.0.3`),
+  unblocked by `@vorionsys/contracts@1.1.2` widening its `typescript` peer to
+  `^5.0.0 || ^6.0.0` (PR #17). The dependabot `typescript`-major hold was
+  removed; `npm ci` resolves clean with no `ERESOLVE`.
 - **Trust constants now come from `@vorionsys/basis-spec@^1.2.0`**
   (`TRUST_FACTORS`, `TRUST_TIERS`, `OBSERVATION_TIERS`, `RISK_ACCUMULATOR`,
   `RISK_LEVELS`, `PENALTY_RATIO_MIN/MAX`, `MIN`/`MAX_TRUST_SCORE`),
