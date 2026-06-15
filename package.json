@@ -1,6 +1,6 @@
 {
   "name": "@vorionsys/rainbow",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "RAINBOW - Recorded Analytics Involving Non-Binary Orchestration Window",
   "type": "module",
   "main": "./dist/index.js",
