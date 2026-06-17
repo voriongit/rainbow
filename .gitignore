@@ -10,3 +10,8 @@ coverage/
 .vscode/
 .idea/
 *.tsbuildinfo
+CLAUDE.md
+CLAUDE.local.md
+AGENTS.md
+.claude/
+.mcp.json
